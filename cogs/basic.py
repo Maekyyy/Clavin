@@ -9,8 +9,11 @@ class Basic(commands.Cog):
 
     # --- SLASH COMMAND EXAMPLE ---
     # The commands.slash_command() decorator registers the command as a slash command
-    @commands.slash_command(name="synctest", description="Tests if the bot is alive and slash commands are working.")
-    async def slash_test(self, ctx: discord.ApplicationContext):
+    @commands.slash_command(
+        name="synctest", 
+        description="Tests if the bot is alive and slash commands are working."
+    )
+    async def slash_test(self, ctx):
         # ctx here is ApplicationContext, specific to slash commands
         
         # We use ctx.respond for slash command responses
@@ -18,7 +21,11 @@ class Basic(commands.Cog):
 
     # --- SLASH COMMAND WITH ARGUMENTS EXAMPLE ---
     @commands.slash_command(name="hello", description="Says hello to the user.")
-    @discord.option("name", description="The name of the person to greet.")
+    @discord.option(
+        name="name",
+        description="The name of the person to greet.",
+        required=True
+    )
     async def greet(self, ctx: discord.ApplicationContext, name: str):
         await ctx.respond(f"👋 Hello, {name}! Nice to meet you.")
 

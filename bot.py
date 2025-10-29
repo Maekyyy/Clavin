@@ -44,7 +44,7 @@ async def on_ready():
     # Load cogs only when bot is ready
     load_cogs()
     # Syncing global slash commands with Discord API
-    synced = await bot.tree.sync()
+    synced = await bot.sync_commands()
     print(f"🔄 Synced {len(synced)} slash commands globally.")
     print('----------------------------------------------------')
 
