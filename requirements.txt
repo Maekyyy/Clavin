@@ -1,2 +1,4 @@
 # The discord library used (e.g., py-cord or discord.py)
 py-cord
+
+flask  # Adding Flask for Google Cloud Run
