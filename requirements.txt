@@ -1,0 +1,2 @@
+# The discord library used (e.g., py-cord or discord.py)
+py-cord
