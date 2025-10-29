@@ -29,10 +29,10 @@ intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 # 3. Cog Loading Function (New)
-def load_cogs():
+async def load_cogs():
     # Load the new slash command module 'basic.py' from the 'cogs' folder
     try:
-        bot.load_extension('cogs.basic')
+        await bot.load_extension('cogs.basic')
         print("✅ Successfully loaded cogs.")
     except Exception as e:
         print(f"❌ Failed to load cogs: {e}")
@@ -42,9 +42,9 @@ def load_cogs():
 async def on_ready():
     print(f'🚀 Bot logged in as {bot.user} (ID: {bot.user.id})')
     # Load cogs only when bot is ready
-    load_cogs()
+    await load_cogs()
     # Syncing global slash commands with Discord API
-    synced = await bot.sync_commands()
+    synced = await bot.tree.sync()
     print(f"🔄 Synced {len(synced)} slash commands globally.")
     print('----------------------------------------------------')
 
