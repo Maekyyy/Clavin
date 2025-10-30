@@ -8,10 +8,8 @@ import asyncio
 # --- FLASK FUNCTION FOR CLOUD RUN HEALTH CHECK ---
 # Must run in a separate thread to keep the container alive.
 def run_flask_app():
-    # Cloud Run requires listening on port 8080 (or the one provided by the environment variable)
     app = Flask(__name__)
     
-    # Simple health check path that returns status 200
     @app.route('/')
     def home():
         return "Discord bot is alive!", 200
@@ -28,32 +26,28 @@ intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 # 3. Cog Loading Function (Corrected to be asynchronous)
-# This function is now correctly defined with 'async def'
 async def load_cogs():
     try:
-        # Load the new slash command module 'basic.py' from the 'cogs' folder
-        await bot.load_extension('cogs.basic') # AWAIT is crucial here
+        await bot.load_extension('cogs.basic') 
         print("✅ Successfully loaded cogs.")
     except Exception as e:
-        # If loading fails, this will be printed in Cloud Run logs
         print(f"❌ Failed to load cogs: {e}")
 
-# 4. Event: Bot is ready (Final corrected sync method and await for loading)
+# 4. Event: Bot is ready (Final corrected sync method)
 @bot.event
 async def on_ready():
     print(f'🚀 Bot logged in as {bot.user} (ID: {bot.user.id})')
     
-    # Load cogs first (must use await)
     await load_cogs() 
     
-    # Syncing global slash commands with Discord API (Correct method for py-cord/modern discord.py)
+    # Use bot.tree.sync() for slash commands
     synced = await bot.tree.sync() 
     
-    # Safely check length before printing (fixes TypeError: object of type 'NoneType' has no len())
+    # Safely check length
     if synced is not None:
         print(f"🔄 Synced {len(synced)} slash commands globally.")
     else:
-        print("❌ WARNING: Slash command sync returned None. Check logs for API errors.")
+        print("❌ WARNING: Slash command sync returned None.")
         
     print('----------------------------------------------------')
 
