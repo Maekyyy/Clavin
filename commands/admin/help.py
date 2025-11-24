@@ -16,7 +16,8 @@ def cmd_help(data):
                     "fields": [
                         {
                             "name": "💰 Economy Module",
-                            "value": "`/balance` - Check your wallet\n`/daily` - Collect daily reward",
+                            # Zmiana z leaderboard na richlist:
+                            "value": "`/balance` - Wallet\n`/daily` - Free chips\n`/pay` - Send money\n`/richlist` - Top players",
                             "inline": False
                         },
                         {  

@@ -4,36 +4,34 @@ from flask import Flask, jsonify, request
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
 
-# === MODULE IMPORTS ===
+# --- IMPORTY ---
 from commands.fun.hello import HELLO_DATA, cmd_hello
 from commands.root.synctest import SYNCTEST_DATA, cmd_synctest
 from commands.admin.server import SERVER_DATA, cmd_server_info
 from commands.admin.help import HELP_DATA, cmd_help
 from commands.economy.money import BALANCE_DATA, cmd_balance, DAILY_DATA, cmd_daily
-# Poker imports both the command and the button handler
 from commands.fun.poker import POKER_DATA, cmd_poker, handle_poker_component
 from commands.fun.cat import CAT_DATA, cmd_cat
-from commands.fun.roulette import ROULETTE_DATA, cmd_roulette 
+from commands.fun.roulette import ROULETTE_DATA, cmd_roulette
+# NOWE IMPORTY:
+from commands.economy.richlist import RICHLIST_DATA, cmd_richlist
+from commands.economy.pay import PAY_DATA, cmd_pay
+from commands.fun.slots import SLOTS_DATA, cmd_slots
+from commands.fun.eightball import EIGHTBALL_DATA, cmd_eightball
 
 app = Flask(__name__)
 
-# --- CONFIGURATION ---
 PUBLIC_KEY = os.environ.get("DISCORD_PUBLIC_KEY")
 BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 APP_ID = os.environ.get("DISCORD_APP_ID")
 
-# --- COMMAND REGISTRY ---
+# --- REJESTR KOMEND ---
 ALL_COMMANDS = [
-        HELLO_DATA, 
-        SYNCTEST_DATA, 
-        SERVER_DATA, 
-        HELP_DATA, 
-        BALANCE_DATA, 
-        DAILY_DATA, 
-        POKER_DATA,
-        CAT_DATA,
-        ROULETTE_DATA
-    ]
+    HELLO_DATA, SYNCTEST_DATA, SERVER_DATA, HELP_DATA,
+    BALANCE_DATA, DAILY_DATA, POKER_DATA, CAT_DATA, ROULETTE_DATA,
+    # ZMIANA NAZWY:
+    RICHLIST_DATA, PAY_DATA, SLOTS_DATA, EIGHTBALL_DATA
+]
 
 COMMAND_HANDLERS = {
     "hello": cmd_hello,
@@ -44,13 +42,17 @@ COMMAND_HANDLERS = {
     "daily": cmd_daily,
     "poker": cmd_poker,
     "cat": cmd_cat,
-    "roulette": cmd_roulette
+    "roulette": cmd_roulette,
+    # ZMIANA KLUCZA:
+    "richlist": cmd_richlist,
+    "pay": cmd_pay,
+    "slots": cmd_slots,
+    "8ball": cmd_eightball
 }
 
-# --- ENDPOINTS ---
 @app.route('/', methods=['POST'])
 def interactions():
-    # Verify signature
+    # ... (Weryfikacja klucza bez zmian) ...
     verify_key = VerifyKey(bytes.fromhex(PUBLIC_KEY))
     signature = request.headers.get('X-Signature-Ed25519')
     timestamp = request.headers.get('X-Signature-Timestamp')
@@ -61,11 +63,8 @@ def interactions():
         return "Invalid signature", 401
 
     r = request.json
-    
-    # 1. PING
     if r["type"] == 1: return jsonify({"type": 1})
     
-    # 2. SLASH COMMANDS
     if r["type"] == 2:
         name = r["data"]["name"]
         if "guild_id" in r: r["data"]["guild_id"] = r["guild_id"]
@@ -74,23 +73,19 @@ def interactions():
         if name in COMMAND_HANDLERS:
             return jsonify(COMMAND_HANDLERS[name](r["data"]))
     
-    # 3. COMPONENT INTERACTION (Buttons)
     if r["type"] == 3:
         custom_id = r["data"]["custom_id"]
-        
-        # If button ID starts with "poker_", route to poker handler
         if custom_id.startswith("poker_"):
             return jsonify(handle_poker_component(r))
 
-    return jsonify({"error": "unknown interaction"}), 400
+    return jsonify({"error": "unknown"}), 400
 
-# Magic Link to refresh commands on Discord
 @app.route('/admin/refresh-commands', methods=['GET'])
 def refresh_commands():
     url = f"https://discord.com/api/v10/applications/{APP_ID}/commands"
     headers = {"Authorization": f"Bot {BOT_TOKEN}"}
     r = requests.put(url, headers=headers, json=ALL_COMMANDS)
-    return f"Status: {r.status_code}<br>{r.text}"
+    return f"Updated {len(ALL_COMMANDS)} commands. Status: {r.status_code}<br>{r.text}"
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
