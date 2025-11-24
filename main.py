@@ -9,6 +9,8 @@ from commands.fun.hello import HELLO_DATA, cmd_hello
 from commands.root.synctest import SYNCTEST_DATA, cmd_synctest
 from commands.admin.server import SERVER_DATA, cmd_server_info
 from commands.admin.help import HELP_DATA, cmd_help
+# NOWE: Import Pokera
+from commands.fun.poker import POKER_DATA, cmd_poker
 
 app = Flask(__name__)
 
@@ -22,14 +24,16 @@ ALL_COMMANDS = [
     HELLO_DATA,
     SYNCTEST_DATA,
     SERVER_DATA,
-    HELP_DATA
+    HELP_DATA,
+    POKER_DATA   # <--- NOWE: Dodaj tutaj
 ]
 
 COMMAND_HANDLERS = {
     "hello": cmd_hello,
     "synctest": cmd_synctest,
     "serverinfo": cmd_server_info,
-    "help": cmd_help
+    "help": cmd_help,
+    "poker": cmd_poker  # <--- NOWE: Dodaj tutaj
 }
 
 # --- ENDPOINTS ---
