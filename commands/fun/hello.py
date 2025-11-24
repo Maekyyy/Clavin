@@ -22,6 +22,6 @@ def cmd_hello(data):
     return {
         "type": 4,
         "data": {
-            "content": f"👋 Hello {user_name}! Greetings from the **fun** folder!"
+            "content": f"👋 Hello {user_name}! I'm all yours!"
         }
     }

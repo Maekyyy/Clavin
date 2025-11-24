@@ -8,46 +8,47 @@ SERVER_DATA = {
 }
 
 def cmd_server_info(data):
-    # 1. Pobieramy Token i ID (potrzebne do zapytania API)
     token = os.environ.get("DISCORD_BOT_TOKEN")
     guild_id = data.get("guild_id")
 
     if not guild_id:
         return {"type": 4, "data": {"content": "❌ Error: Could not determine Guild ID."}}
 
-    # 2. Przygotowujemy nagłówki dla Discord API
     headers = {"Authorization": f"Bot {token}"}
     base_url = "https://discord.com/api/v10"
 
-    # 3. POBIERAMY DANE O SERWERZE (Szczegóły, właściciel, liczba członków)
-    # Parametr with_counts=true jest kluczowy!
+    # 1. POBIERANIE DANYCH
     r_guild = requests.get(f"{base_url}/guilds/{guild_id}?with_counts=true", headers=headers)
     
     if r_guild.status_code != 200:
         return {"type": 4, "data": {"content": f"❌ Error fetching guild data: {r_guild.status_code}"}}
     
-    g = r_guild.json() # 'g' to obiekt z danymi serwera
+    g = r_guild.json()
 
-    # 4. POBIERAMY DANE O KANAŁACH (Żeby je policzyć)
+    # 2. POBIERANIE KANAŁÓW
     r_channels = requests.get(f"{base_url}/guilds/{guild_id}/channels", headers=headers)
     channels = r_channels.json() if r_channels.status_code == 200 else []
 
-    # --- PRZETWARZANIE DANYCH (MATEMATYKA) ---
+    # --- OBLICZENIA ---
 
-    # Liczenie kanałów
-    text_count = len([c for c in channels if c["type"] == 0]) # 0 = Text
-    voice_count = len([c for c in channels if c["type"] == 2]) # 2 = Voice
-    category_count = len([c for c in channels if c["type"] == 4]) # 4 = Category
+    # Data utworzenia z ID (Snowflake Logic)
+    # Przesuwamy bity i dodajemy Epokę Discorda (2015-01-01)
+    snowflake = int(guild_id)
+    created_timestamp = ((snowflake >> 22) + 1420070400000) / 1000
+    # Format Discorda: <t:TIMESTAMP:F> wyświetli pełną datę w języku użytkownika
+    created_str = f"<t:{int(created_timestamp)}:F> (<t:{int(created_timestamp)}:R>)"
+
+    # Statystyki kanałów
+    text_count = len([c for c in channels if c["type"] == 0])
+    voice_count = len([c for c in channels if c["type"] == 2])
+    category_count = len([c for c in channels if c["type"] == 4])
 
     # Role
     roles = g.get("roles", [])
     roles_count = len(roles)
-    
-    # Sortujemy role (od najwyższej) i usuwamy @everyone
     sorted_roles = sorted(roles, key=lambda x: x["position"], reverse=True)
     role_mentions = [f"<@&{r['id']}>" for r in sorted_roles if r["name"] != "@everyone"]
     
-    # Formatowanie listy ról (żeby nie była za długa)
     if len(role_mentions) > 20:
         roles_display = ", ".join(role_mentions[:20]) + f" ...and {len(role_mentions)-20} more"
     else:
@@ -58,70 +59,69 @@ def cmd_server_info(data):
     static_emojis = len([e for e in emojis if not e.get("animated", False)])
     animated_emojis = len([e for e in emojis if e.get("animated", False)])
 
-    # Daty i inne
-    # Używamy specjalnego formatowania Discorda <t:TIMESTAMP:F> -> Pokaże datę w języku użytkownika!
-    # 'id' serwera to timestamp (snowflake), ale prościej wziąć datę z API jeśli dostępna,
-    # lub po prostu wyświetlić ID. Discord API nie zwraca wprost "created_at" w tym endpoincie
-    # bez obliczeń na bitach, więc dla uproszczenia wyświetlimy ID.
-    
-    # Obrazek serwera (Icon URL)
+    # Ikona
     icon_url = ""
     if g.get("icon"):
         icon_url = f"https://cdn.discordapp.com/icons/{guild_id}/{g['icon']}.png"
 
-    # 5. BUDOWANIE EMBEDA (Wygląd a'la Dyno)
+    # --- BUDOWANIE EMBEDA ---
     return {
         "type": 4,
         "data": {
             "embeds": [
                 {
                     "title": g.get("name", "Server Info"),
-                    "color": 0x2b2d31, # Ciemny kolor tła (jak w Dyno)
+                    "color": 0x2b2d31,
                     "thumbnail": {"url": icon_url},
                     "fields": [
                         {
-                            "name": "Owner",
+                            "name": "👑 Owner",
                             "value": f"<@{g['owner_id']}>",
                             "inline": True
                         },
                         {
-                            "name": "Members",
+                            "name": "👥 Members",
                             "value": str(g.get("approximate_member_count", "Unknown")),
                             "inline": True
                         },
                         {
-                            "name": "Roles",
+                            "name": "📅 Server Created",  # <-- NOWE POLE
+                            "value": created_str,
+                            "inline": False  # False, żeby data zajęła całą szerokość
+                        },
+                        {
+                            "name": "🎭 Roles",
                             "value": str(roles_count),
                             "inline": True
                         },
                         {
-                            "name": "Category Channels",
+                            "name": "📂 Categories",
                             "value": str(category_count),
                             "inline": True
                         },
                         {
-                            "name": "Text Channels",
+                            "name": "💬 Text Channels",
                             "value": str(text_count),
                             "inline": True
                         },
                         {
-                            "name": "Voice Channels",
+                            "name": "🔊 Voice Channels",
                             "value": str(voice_count),
                             "inline": True
                         },
                         {
-                            "name": "Emojis",
+                            "name": "😃 Emojis",
                             "value": f"Static: {static_emojis} | Animated: {animated_emojis} | Total: {len(emojis)}",
                             "inline": False
                         },
                         {
-                            "name": f"Role List ({len(role_mentions)})",
+                            "name": f"📜 Role List ({len(role_mentions)})",
                             "value": roles_display,
                             "inline": False
                         }
                     ],
                     "footer": {
-                        "text": f"ID: {guild_id}"
+                        "text": f"ID: {guild_id} • Running on Google Cloud Run"
                     }
                 }
             ]
