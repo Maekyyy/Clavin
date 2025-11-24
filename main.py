@@ -4,36 +4,35 @@ from flask import Flask, jsonify, request
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
 
-# === IMPORTUJEMY MODUŁY ===
+# === IMPORT MODULES ===
 from commands.fun.hello import HELLO_DATA, cmd_hello
 from commands.root.synctest import SYNCTEST_DATA, cmd_synctest
 from commands.admin.server import SERVER_DATA, cmd_server_info
-# NOWY IMPORT:
 from commands.admin.help import HELP_DATA, cmd_help
 
 app = Flask(__name__)
 
-# --- KONFIGURACJA ---
+# --- CONFIGURATION ---
 PUBLIC_KEY = os.environ.get("DISCORD_PUBLIC_KEY")
 BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 APP_ID = os.environ.get("DISCORD_APP_ID")
 
-# --- REJESTR KOMEND ---
+# --- COMMAND REGISTRY ---
 ALL_COMMANDS = [
     HELLO_DATA,
     SYNCTEST_DATA,
     SERVER_DATA,
-    HELP_DATA   # <--- DODAJEMY TUTAJ
+    HELP_DATA
 ]
 
 COMMAND_HANDLERS = {
     "hello": cmd_hello,
     "synctest": cmd_synctest,
     "serverinfo": cmd_server_info,
-    "help": cmd_help  # <--- I DODAJEMY TUTAJ
+    "help": cmd_help
 }
 
-# --- ENDPOINTY ---
+# --- ENDPOINTS ---
 @app.route('/', methods=['POST'])
 def interactions():
     verify_key = VerifyKey(bytes.fromhex(PUBLIC_KEY))
@@ -65,7 +64,11 @@ def refresh_commands():
     url = f"https://discord.com/api/v10/applications/{APP_ID}/commands"
     headers = {"Authorization": f"Bot {BOT_TOKEN}"}
     r = requests.put(url, headers=headers, json=ALL_COMMANDS)
-    return f"Status: {r.status_code}<br>{r.text}"
+    
+    if r.status_code in [200, 201]:
+        return f"✅ Success! Registered {len(ALL_COMMANDS)} commands.<br>API Response: {r.status_code}"
+    else:
+        return f"❌ Error: {r.status_code}<br>{r.text}"
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))

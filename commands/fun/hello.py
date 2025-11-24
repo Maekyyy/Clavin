@@ -1,20 +1,20 @@
-# DEFINICJA KOMENDY (Dla Discorda)
+# COMMAND DEFINITION (For Discord)
 HELLO_DATA = {
     "name": "hello",
-    "description": "Przywitaj się z botem (Module Fun)",
+    "description": "Say hello to the bot (Fun Module)",
     "type": 1,
     "options": [{
         "name": "name",
-        "description": "Twoje imię",
+        "description": "Your name",
         "type": 3,
         "required": True
     }]
 }
 
-# LOGIKA KOMENDY
+# COMMAND LOGIC
 def cmd_hello(data):
     options = data.get("options", [])
-    user_name = "Nieznajomy"
+    user_name = "Stranger"
     for option in options:
         if option["name"] == "name":
             user_name = option["value"]
@@ -22,6 +22,6 @@ def cmd_hello(data):
     return {
         "type": 4,
         "data": {
-            "content": f"👋 Cześć {user_name}! Pozdrowienia z folderu **fun**!"
+            "content": f"👋 Hello {user_name}! Greetings from the **fun** folder!"
         }
     }

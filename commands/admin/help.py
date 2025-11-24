@@ -1,6 +1,6 @@
 HELP_DATA = {
     "name": "help",
-    "description": "Wyświetla listę dostępnych komend",
+    "description": "Displays the list of available commands",
     "type": 1
 }
 
@@ -10,28 +10,28 @@ def cmd_help(data):
         "data": {
             "embeds": [
                 {
-                    "title": "📜 Lista Komend Clavin Bot",
-                    "description": "Oto spis wszystkich funkcji dostępnych w bocie:",
-                    "color": 0x3498db,  # Niebieski kolor
+                    "title": "📜 Clavin Bot Command List",
+                    "description": "Here is a list of all available bot functions:",
+                    "color": 0x3498db,  # Blue color
                     "fields": [
                         {
-                            "name": "🎉 Moduł Fun",
-                            "value": "`/hello` - Przywitanie z botem",
+                            "name": "🎉 Fun Module",
+                            "value": "`/hello` - Say hello to the bot",
                             "inline": False
                         },
                         {
-                            "name": "⚙️ Moduł Root",
-                            "value": "`/synctest` - Sprawdzenie stanu połączenia",
+                            "name": "⚙️ Root Module",
+                            "value": "`/synctest` - Check connection status",
                             "inline": False
                         },
                         {
-                            "name": "🛡️ Moduł Admin",
-                            "value": "`/serverinfo` - Informacje o serwerze\n`/help` - Wyświetla tę listę",
+                            "name": "🛡️ Admin Module",
+                            "value": "`/serverinfo` - Server information\n`/help` - Displays this list",
                             "inline": False
                         }
                     ],
                     "footer": {
-                        "text": "Działam na Google Cloud Run"
+                        "text": "Running on Google Cloud Run"
                     }
                 }
             ]

@@ -1,17 +1,16 @@
 SERVER_DATA = {
     "name": "serverinfo",
-    "description": "Pokaż podstawowe informacje o serwerze",
+    "description": "Show basic server information",
     "type": 1
 }
 
 def cmd_server_info(data):
-    # W danych od Discorda mamy 'guild_id'
-    guild_id = data.get("guild_id", "Nieznane (DM?)")
+    guild_id = data.get("guild_id", "Unknown (DM?)")
     
-    # Możemy też wyciągnąć ID użytkownika, który wywołał komendę
+    # Try to get username
     member = data.get("member", {})
     user = member.get("user", {})
-    username = user.get("username", "Nieznajomy")
+    username = user.get("username", "Stranger")
 
     return {
         "type": 4,
@@ -19,13 +18,13 @@ def cmd_server_info(data):
             "embeds": [
                 {
                     "title": "📊 Server Info",
-                    "color": 0x00ff00, # Zielony kolor
+                    "color": 0x00ff00,
                     "fields": [
                         {"name": "Server ID", "value": str(guild_id), "inline": True},
-                        {"name": "Wywołane przez", "value": username, "inline": True},
-                        {"name": "Moduł", "value": "Admin", "inline": True}
+                        {"name": "Triggered by", "value": username, "inline": True},
+                        {"name": "Code Location", "value": "commands/admin/server.py", "inline": False}
                     ],
-                    "footer": {"text": "Działam na Google Cloud Run"}
+                    "footer": {"text": "Running on Google Cloud Run"}
                 }
             ]
         }
