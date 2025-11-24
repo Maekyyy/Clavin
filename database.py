@@ -1,5 +1,6 @@
 import os
 import time
+import random
 from google.cloud import firestore
 
 db = firestore.Client()
@@ -55,12 +56,10 @@ def get_leaderboard(limit=10):
     users_ref = db.collection('users')
     return users_ref.order_by('balance', direction=firestore.Query.DESCENDING).limit(limit).stream()
 
-# --- NOWE: CZAS (COOLDOWNS) ---
+# --- COOLDOWNS ---
 def check_cooldown(user_id, command_name, cooldown_seconds):
-    """Sprawdza czy można użyć komendy. Zwraca (True, 0) lub (False, czas_do_końca)."""
     user_ref = db.collection('users').document(str(user_id))
     doc = user_ref.get()
-    
     now = int(time.time())
     
     if doc.exists:
@@ -69,31 +68,31 @@ def check_cooldown(user_id, command_name, cooldown_seconds):
         if now - last_used < cooldown_seconds:
             return False, cooldown_seconds - (now - last_used)
     
-    # Zapisz nowy czas użycia
     user_ref.set({f'cd_{command_name}': now}, merge=True)
     return True, 0
 
-# --- NOWE: EKWIPUNEK (SHOP) ---
+# --- EKWIPUNEK & TYTUŁY ---
 def get_inventory(user_id):
-    """Zwraca listę przedmiotów użytkownika."""
     user_ref = db.collection('users').document(str(user_id))
     doc = user_ref.get()
-    if doc.exists:
-        return doc.to_dict().get('inventory', [])
-    return []
+    return doc.to_dict().get('inventory', []) if doc.exists else []
 
 def add_item(user_id, item_id):
-    """Dodaje przedmiot do ekwipunku."""
     user_ref = db.collection('users').document(str(user_id))
-    # Firestore array_union dodaje element tylko jeśli go nie ma (unikalne)
     user_ref.update({"inventory": firestore.ArrayUnion([item_id])})
 
 def remove_item(user_id, item_id):
-    """Usuwa przedmiot (np. zużytą tarczę)."""
     user_ref = db.collection('users').document(str(user_id))
     user_ref.update({"inventory": firestore.ArrayRemove([item_id])})
 
-# --- GRY (POKER) ---
+def set_title(user_id, title):
+    db.collection('users').document(str(user_id)).set({'title': title}, merge=True)
+
+def get_title(user_id):
+    doc = db.collection('users').document(str(user_id)).get()
+    return doc.to_dict().get('title', "") if doc.exists else ""
+
+# --- GRY ---
 def set_game_state(user_id, game_data):
     db.collection('games').document(str(user_id)).set(game_data)
 
@@ -103,17 +102,72 @@ def get_game_state(user_id):
 
 def delete_game_state(user_id):
     db.collection('games').document(str(user_id)).delete()
-    
-# --- TYTUŁY (TITLE SYSTEM) ---
-def set_title(user_id, title):
-    """Ustawia tytuł użytkownika (np. 'Król')."""
-    user_ref = db.collection('users').document(str(user_id))
-    user_ref.set({'title': title}, merge=True)
 
-def get_title(user_id):
-    """Pobiera tytuł użytkownika."""
+# --- NOWE: KRYPTOWALUTY (ClavinCoin) ---
+def get_crypto_price():
+    """Pobiera (lub generuje) aktualną cenę krypto."""
+    market_ref = db.collection('system').document('market')
+    doc = market_ref.get()
+    now = int(time.time())
+    
+    data = doc.to_dict() if doc.exists else {}
+    price = data.get('price', 100)
+    last_update = data.get('last_update', 0)
+    
+    # Aktualizuj cenę co 10 minut
+    if now - last_update > 600:
+        change_percent = random.uniform(-0.1, 0.15) # -10% do +15%
+        price = max(1, int(price * (1 + change_percent)))
+        market_ref.set({'price': price, 'last_update': now})
+        
+    return price
+
+def get_crypto_balance(user_id):
+    doc = db.collection('users').document(str(user_id)).get()
+    return doc.to_dict().get('crypto', 0) if doc.exists else 0
+
+def update_crypto(user_id, amount):
     user_ref = db.collection('users').document(str(user_id))
-    doc = user_ref.get()
+    user_ref.update({"crypto": firestore.Increment(amount)})
+
+# --- NOWE: POZIOMY (XP) ---
+def add_xp(user_id, amount=10):
+    """Dodaje XP i zwraca (nowy_poziom, czy_awansował)."""
+    user_ref = db.collection('users').document(str(user_id))
+    
+    @firestore.transactional
+    def tx_xp(transaction, ref):
+        snapshot = ref.get(transaction=transaction)
+        current_xp = 0
+        current_lvl = 1
+        
+        if snapshot.exists:
+            data = snapshot.to_dict()
+            current_xp = data.get('xp', 0)
+            current_lvl = data.get('level', 1)
+        
+        new_xp = current_xp + amount
+        # Wzór na level: 100 * level
+        xp_needed = current_lvl * 100
+        
+        leveled_up = False
+        if new_xp >= xp_needed:
+            current_lvl += 1
+            new_xp -= xp_needed # Resetujemy pasek (lub kumulujemy, tu reset)
+            leveled_up = True
+            
+        transaction.set(ref, {'xp': new_xp, 'level': current_lvl}, merge=True)
+        return current_lvl, leveled_up
+
+    transaction = db.transaction()
+    return tx_xp(transaction, user_ref)
+
+def get_level_data(user_id):
+    doc = db.collection('users').document(str(user_id)).get()
     if doc.exists:
-        return doc.to_dict().get('title', "")
-    return ""
+        data = doc.to_dict()
+        return data.get('level', 1), data.get('xp', 0)
+    return 1, 0
+
+def get_xp_leaderboard(limit=10):
+    return db.collection('users').order_by('level', direction=firestore.Query.DESCENDING).limit(limit).stream()

@@ -26,6 +26,11 @@ def cmd_help(data):
                             "value": "`/poker` `/blackjack` `/roulette`\n`/duel` - Challenge player\n`/coinflip` `/slots` `/cat`",
                             "inline": False
                         },
+                {
+                            "name": "📈 Levels & Crypto",
+                            "value": "`/rank` - Check Level\n`/leaderboard` - Top Levels\n`/crypto` - Trade ClavinCoin",
+                            "inline": False
+                        },
                         {
                             "name": "⚙️ Root Module",
                             "value": "`/synctest` - Check connection status",

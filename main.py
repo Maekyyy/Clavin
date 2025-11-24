@@ -29,54 +29,59 @@ from commands.economy.work import WORK_DATA, cmd_work
 from commands.economy.shop import SHOP_DATA, cmd_shop
 from commands.economy.rob import ROB_DATA, cmd_rob
 from commands.economy.titles import BUY_TITLE_DATA, cmd_buy_title
+from commands.economy.crypto import CRYPTO_DATA, cmd_crypto
 
-# Dodatkowe handlery interakcji (spoza pokera)
+# Levels
+from commands.levels.rank import RANK_DATA, cmd_rank, LEADERBOARD_XP_DATA, cmd_leaderboard_xp
+
+# Handlery interakcji gier (przyciski)
 from commands.fun.blackjack import BLACKJACK_DATA, cmd_blackjack, handle_blackjack_component
 from commands.fun.duel import DUEL_DATA, cmd_duel, handle_duel_component
+
+# Baza danych (do XP)
+from database import add_xp
 
 app = Flask(__name__)
 
 # --- KONFIGURACJA ---
-# Pobieramy zmienne środowiskowe z Google Cloud Run
 PUBLIC_KEY = os.environ.get("DISCORD_PUBLIC_KEY")
 BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 APP_ID = os.environ.get("DISCORD_APP_ID")
 
 # --- REJESTR KOMEND (Lista Definicji) ---
-# To jest lista, którą wysyłamy do Discorda przez Magiczny Link
 ALL_COMMANDS = [
-    HELLO_DATA,
-    SYNCTEST_DATA,
-    SERVER_DATA,
-    HELP_DATA,
+    # Fun
+    HELLO_DATA, POKER_DATA, CAT_DATA, ROULETTE_DATA, SLOTS_DATA, 
+    EIGHTBALL_DATA, COINFLIP_DATA, AVATAR_DATA, SHIP_DATA, 
+    BLACKJACK_DATA, DUEL_DATA,
+    
+    # Admin/System
+    SYNCTEST_DATA, SERVER_DATA, HELP_DATA,
     
     # Economy
-    BALANCE_DATA,
-    DAILY_DATA,
-    RICHLIST_DATA,
-    PAY_DATA,
-    WORK_DATA,
-    SHOP_DATA,
-    ROB_DATA,
-    BUY_TITLE_DATA,
+    BALANCE_DATA, DAILY_DATA, RICHLIST_DATA, PAY_DATA, 
+    WORK_DATA, SHOP_DATA, ROB_DATA, BUY_TITLE_DATA, CRYPTO_DATA,
     
-    # Fun / Games
-    POKER_DATA,
-    CAT_DATA,
-    ROULETTE_DATA,
-    SLOTS_DATA,
-    EIGHTBALL_DATA,
-    COINFLIP_DATA,
-    AVATAR_DATA,
-    SHIP_DATA,
-    BLACKJACK_DATA,
-    DUEL_DATA
+    # Levels
+    RANK_DATA, LEADERBOARD_XP_DATA
 ]
 
 # --- MAPA FUNKCJI (Logika) ---
-# To łączy nazwę komendy (od Discorda) z funkcją w Pythonie
 COMMAND_HANDLERS = {
+    # Fun
     "hello": cmd_hello,
+    "poker": cmd_poker,
+    "cat": cmd_cat,
+    "roulette": cmd_roulette,
+    "slots": cmd_slots,
+    "8ball": cmd_eightball,
+    "coinflip": cmd_coinflip,
+    "avatar": cmd_avatar,
+    "ship": cmd_ship,
+    "blackjack": cmd_blackjack,
+    "duel": cmd_duel,
+    
+    # Admin/System
     "synctest": cmd_synctest,
     "serverinfo": cmd_server_info,
     "help": cmd_help,
@@ -90,25 +95,18 @@ COMMAND_HANDLERS = {
     "shop": cmd_shop,
     "rob": cmd_rob,
     "buy_title": cmd_buy_title,
+    "crypto": cmd_crypto,
     
-    # Fun / Games
-    "poker": cmd_poker,
-    "cat": cmd_cat,
-    "roulette": cmd_roulette,
-    "slots": cmd_slots,
-    "8ball": cmd_eightball,
-    "coinflip": cmd_coinflip,
-    "avatar": cmd_avatar,
-    "ship": cmd_ship,
-    "blackjack": cmd_blackjack,
-    "duel": cmd_duel
+    # Levels
+    "rank": cmd_rank,
+    "leaderboard": cmd_leaderboard_xp
 }
 
 # --- ENDPOINTY ---
 
 @app.route('/', methods=['POST'])
 def interactions():
-    # 1. Weryfikacja bezpieczeństwa (Ed25519)
+    # 1. Weryfikacja bezpieczeństwa
     verify_key = VerifyKey(bytes.fromhex(PUBLIC_KEY))
     signature = request.headers.get('X-Signature-Ed25519')
     timestamp = request.headers.get('X-Signature-Timestamp')
@@ -121,44 +119,66 @@ def interactions():
 
     r = request.json
     
-    # 2. Obsługa PING (Wymagane przez Discord)
+    # 2. PING
     if r["type"] == 1:
         return jsonify({"type": 1})
     
-    # 3. Obsługa SLASH COMMANDS (Wpisanie komendy)
+    # --- SYSTEM XP (Globalny dla każdej akcji) ---
+    # Każda interakcja (komenda lub przycisk) daje XP
+    leveled_up = False
+    new_lvl = 0
+    
+    if "member" in r:
+        user_id = r["member"]["user"]["id"]
+        # Losowe XP (5-15)
+        import random
+        xp_gain = random.randint(5, 15)
+        new_lvl, leveled_up = add_xp(user_id, xp_gain)
+    
+    # 3. SLASH COMMANDS
     if r["type"] == 2:
         name = r["data"]["name"]
         
-        # Przekazujemy dodatkowe dane kontekstowe (np. ID serwera, dane usera)
+        # Przekazujemy dodatkowe dane
         if "guild_id" in r: r["data"]["guild_id"] = r["guild_id"]
         if "member" in r: r["data"]["member"] = r["member"]
-        # Przekazujemy resolved data (potrzebne dla np. avatara)
         if "data" in r and "resolved" in r["data"]:
              r["data"]["resolved"] = r["data"]["resolved"]
 
         if name in COMMAND_HANDLERS:
-            # Uruchamiamy odpowiednią funkcję i zwracamy jej wynik JSON
-            return jsonify(COMMAND_HANDLERS[name](r["data"]))
+            response = COMMAND_HANDLERS[name](r["data"])
+            
+            # Jeśli user awansował, dopisujemy gratulacje do wiadomości
+            if leveled_up and isinstance(response, dict) and "data" in response:
+                msg = response["data"].get("content", "")
+                # Jeśli wiadomość ma treść, dodaj nową linię. Jeśli nie, stwórz treść.
+                prefix = "\n\n" if msg else ""
+                response["data"]["content"] = f"{msg}{prefix}⭐ **LEVEL UP!** You reached **Level {new_lvl}**!"
+            
+            return jsonify(response)
             
         return jsonify({"error": "unknown command"}), 400
     
-    # 4. Obsługa KOMPONENTÓW (Kliknięcie przycisku)
+    # 4. COMPONENT INTERACTION (Przyciski)
     if r["type"] == 3:
         custom_id = r["data"]["custom_id"]
         
-        # Router dla przycisków
+        response = None
         if custom_id.startswith("poker_"):
-            return jsonify(handle_poker_component(r))
+            response = handle_poker_component(r)
+        elif custom_id.startswith("bj_"):
+            response = handle_blackjack_component(r)
+        elif custom_id.startswith("duel_"):
+            response = handle_duel_component(r)
             
-        if custom_id.startswith("bj_"):
-            return jsonify(handle_blackjack_component(r))
-            
-        if custom_id.startswith("duel_"):
-            return jsonify(handle_duel_component(r))
+        if response:
+            # Tu też możemy dodać info o level up, jeśli przycisk kończy grę
+            # Ale dla czystości interfejsu gier, lepiej to zostawić tylko przy komendach.
+            return jsonify(response)
 
     return jsonify({"error": "unknown interaction"}), 400
 
-# --- MAGICZNY LINK (Aktualizacja komend) ---
+# --- MAGICZNY LINK ---
 @app.route('/admin/refresh-commands', methods=['GET'])
 def refresh_commands():
     if not APP_ID or not BOT_TOKEN:
@@ -167,7 +187,6 @@ def refresh_commands():
     url = f"https://discord.com/api/v10/applications/{APP_ID}/commands"
     headers = {"Authorization": f"Bot {BOT_TOKEN}"}
     
-    # Wysyłamy całą listę ALL_COMMANDS do API Discorda
     r = requests.put(url, headers=headers, json=ALL_COMMANDS)
     
     if r.status_code in [200, 201]:
