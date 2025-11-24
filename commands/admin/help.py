@@ -16,7 +16,8 @@ def cmd_help(data):
                     "fields": [
                         {
                             "name": "🎉 Fun Module",
-                            "value": "`/hello` - Say hello to the bot\n`/poker` - Play a hand of cards", # <--- ZMIANA
+                            # Dopisz /cat na końcu:
+                            "value": "`/hello` - Say hello to the bot\n`/poker` - Play a hand of cards\n`/cat` - Random cat picture",
                             "inline": False
                         },
                         {

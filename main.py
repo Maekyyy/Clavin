@@ -11,7 +11,9 @@ from commands.admin.server import SERVER_DATA, cmd_server_info
 from commands.admin.help import HELP_DATA, cmd_help
 from commands.economy.money import BALANCE_DATA, cmd_balance, DAILY_DATA, cmd_daily
 # Poker Importuje teraz dwie funkcje: komendę i obsługę przycisku
-from commands.fun.poker import POKER_DATA, cmd_poker, handle_poker_component 
+from commands.fun.poker import POKER_DATA, cmd_poker, handle_poker_component
+# NOWE: Import kota
+from commands.fun.cat import CAT_DATA, cmd_cat 
 
 app = Flask(__name__)
 
@@ -21,7 +23,16 @@ BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 APP_ID = os.environ.get("DISCORD_APP_ID")
 
 # Listy
-ALL_COMMANDS = [HELLO_DATA, SYNCTEST_DATA, SERVER_DATA, HELP_DATA, BALANCE_DATA, DAILY_DATA, POKER_DATA]
+ALL_COMMANDS = [
+        HELLO_DATA, 
+        SYNCTEST_DATA, 
+        SERVER_DATA, 
+        HELP_DATA, 
+        BALANCE_DATA, 
+        DAILY_DATA, 
+        POKER_DATA,
+        CAT_DATA
+    ]
 COMMAND_HANDLERS = {
     "hello": cmd_hello,
     "synctest": cmd_synctest,
@@ -29,7 +40,9 @@ COMMAND_HANDLERS = {
     "help": cmd_help,
     "balance": cmd_balance,
     "daily": cmd_daily,
-    "poker": cmd_poker
+    "poker": cmd_poker,
+    "cat": cmd_cat
+    
 }
 
 @app.route('/', methods=['POST'])
