@@ -2,3 +2,4 @@ Flask
 pynacl
 requests
 gunicorn
+google-cloud-firestore
