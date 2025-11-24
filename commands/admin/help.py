@@ -20,10 +20,10 @@ def cmd_help(data):
                             "value": "`/balance` `/daily` `/pay` `/richlist`\n`/work` `/shop` `/rob`\n`/buy_title` - Prestige titles",
                             "inline": False
                         },
-                        {
+{
                             "name": "🎉 Fun Module",
-                            # Dodano ship i avatar
-                            "value": "`/poker` `/roulette` `/coinflip` `/slots`\n`/cat` `/hello` `/8ball`\n`/ship` - Love calc | `/avatar` - Get pic",
+                            # Dodano blackjack i duel
+                            "value": "`/poker` `/blackjack` `/roulette`\n`/duel` - Challenge player\n`/coinflip` `/slots` `/cat`",
                             "inline": False
                         },
                         {

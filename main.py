@@ -13,8 +13,8 @@ from commands.fun.roulette import ROULETTE_DATA, cmd_roulette
 from commands.fun.slots import SLOTS_DATA, cmd_slots
 from commands.fun.eightball import EIGHTBALL_DATA, cmd_eightball
 from commands.fun.coinflip import COINFLIP_DATA, cmd_coinflip
-from commands.fun.ship import SHIP_DATA, cmd_ship
 from commands.fun.avatar import AVATAR_DATA, cmd_avatar
+from commands.fun.ship import SHIP_DATA, cmd_ship
 
 # Root & Admin
 from commands.root.synctest import SYNCTEST_DATA, cmd_synctest
@@ -29,6 +29,10 @@ from commands.economy.work import WORK_DATA, cmd_work
 from commands.economy.shop import SHOP_DATA, cmd_shop
 from commands.economy.rob import ROB_DATA, cmd_rob
 from commands.economy.titles import BUY_TITLE_DATA, cmd_buy_title
+
+# Dodatkowe handlery interakcji (spoza pokera)
+from commands.fun.blackjack import BLACKJACK_DATA, cmd_blackjack, handle_blackjack_component
+from commands.fun.duel import DUEL_DATA, cmd_duel, handle_duel_component
 
 app = Flask(__name__)
 
@@ -64,7 +68,9 @@ ALL_COMMANDS = [
     EIGHTBALL_DATA,
     COINFLIP_DATA,
     AVATAR_DATA,
-    SHIP_DATA
+    SHIP_DATA,
+    BLACKJACK_DATA,
+    DUEL_DATA
 ]
 
 # --- MAPA FUNKCJI (Logika) ---
@@ -93,7 +99,9 @@ COMMAND_HANDLERS = {
     "8ball": cmd_eightball,
     "coinflip": cmd_coinflip,
     "avatar": cmd_avatar,
-    "ship": cmd_ship
+    "ship": cmd_ship,
+    "blackjack": cmd_blackjack,
+    "duel": cmd_duel
 }
 
 # --- ENDPOINTY ---
@@ -124,6 +132,9 @@ def interactions():
         # Przekazujemy dodatkowe dane kontekstowe (np. ID serwera, dane usera)
         if "guild_id" in r: r["data"]["guild_id"] = r["guild_id"]
         if "member" in r: r["data"]["member"] = r["member"]
+        # Przekazujemy resolved data (potrzebne dla np. avatara)
+        if "data" in r and "resolved" in r["data"]:
+             r["data"]["resolved"] = r["data"]["resolved"]
 
         if name in COMMAND_HANDLERS:
             # Uruchamiamy odpowiednią funkcję i zwracamy jej wynik JSON
@@ -135,9 +146,15 @@ def interactions():
     if r["type"] == 3:
         custom_id = r["data"]["custom_id"]
         
-        # Jeśli ID przycisku zaczyna się od "poker_", to sprawa dla pokera
+        # Router dla przycisków
         if custom_id.startswith("poker_"):
             return jsonify(handle_poker_component(r))
+            
+        if custom_id.startswith("bj_"):
+            return jsonify(handle_blackjack_component(r))
+            
+        if custom_id.startswith("duel_"):
+            return jsonify(handle_duel_component(r))
 
     return jsonify({"error": "unknown interaction"}), 400
 
