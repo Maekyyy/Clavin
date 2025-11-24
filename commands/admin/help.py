@@ -19,9 +19,10 @@ def cmd_help(data):
                             "value": "`/balance` - Check your wallet\n`/daily` - Collect daily reward",
                             "inline": False
                         },
-                        {
+                        {  
                             "name": "🎉 Fun Module",
-                            "value": "`/poker` - Play Video Poker (Bet chips!)\n`/cat` - Random cat picture\n`/hello` - Say hello",
+                            # Dodajemy roulette:
+                            "value": "`/poker` - Video Poker\n`/roulette` - Casino Roulette\n`/cat` - Cat pictures\n`/hello` - Greetings",
                             "inline": False
                         },
                         {

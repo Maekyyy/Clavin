@@ -12,7 +12,8 @@ from commands.admin.help import HELP_DATA, cmd_help
 from commands.economy.money import BALANCE_DATA, cmd_balance, DAILY_DATA, cmd_daily
 # Poker imports both the command and the button handler
 from commands.fun.poker import POKER_DATA, cmd_poker, handle_poker_component
-from commands.fun.cat import CAT_DATA, cmd_cat 
+from commands.fun.cat import CAT_DATA, cmd_cat
+from commands.fun.roulette import ROULETTE_DATA, cmd_roulette 
 
 app = Flask(__name__)
 
@@ -30,7 +31,8 @@ ALL_COMMANDS = [
         BALANCE_DATA, 
         DAILY_DATA, 
         POKER_DATA,
-        CAT_DATA
+        CAT_DATA,
+        ROULETTE_DATA
     ]
 
 COMMAND_HANDLERS = {
@@ -41,7 +43,8 @@ COMMAND_HANDLERS = {
     "balance": cmd_balance,
     "daily": cmd_daily,
     "poker": cmd_poker,
-    "cat": cmd_cat
+    "cat": cmd_cat,
+    "roulette": cmd_roulette
 }
 
 # --- ENDPOINTS ---
