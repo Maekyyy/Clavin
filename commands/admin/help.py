@@ -16,12 +16,14 @@ def cmd_help(data):
                     "fields": [
                         {
                             "name": "💰 Economy Module",
-                            "value": "`/balance` `/daily` `/pay` `/richlist`\n`/work` - Earn money\n`/shop` - Buy items\n`/rob` - Steal from others!",
+                            # Dodano buy_title
+                            "value": "`/balance` `/daily` `/pay` `/richlist`\n`/work` `/shop` `/rob`\n`/buy_title` - Prestige titles",
                             "inline": False
                         },
                         {
                             "name": "🎉 Fun Module",
-                            "value": "`/poker` `/roulette` `/coinflip` `/cat` `/hello`",
+                            # Dodano ship i avatar
+                            "value": "`/poker` `/roulette` `/coinflip` `/slots`\n`/cat` `/hello` `/8ball`\n`/ship` - Love calc | `/avatar` - Get pic",
                             "inline": False
                         },
                         {

@@ -1,5 +1,6 @@
 # Dodajemy check_cooldown do importów
 from database import get_balance, claim_daily, check_cooldown
+from database import get_balance, claim_daily, check_cooldown, get_title
 
 # --- DEFINICJA BALANCE (Bez zmian) ---
 BALANCE_DATA = {
@@ -14,11 +15,15 @@ def cmd_balance(data):
     user_id = user.get("id")
     
     money = get_balance(user_id)
+    title = get_title(user_id) # Pobierz tytuł
+    
+# Jeśli ma tytuł, dodaj go przed nickiem
+    display_name = f"[{title}] {user['username']}" if title else user['username']
     
     return {
         "type": 4,
         "data": {
-            "content": f"💰 **{user['username']}**, you have **${money}** chips."
+            "content": f"💰 **{display_name}**, you have **${money}** chips."
         }
     }
 

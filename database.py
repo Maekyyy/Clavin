@@ -103,3 +103,17 @@ def get_game_state(user_id):
 
 def delete_game_state(user_id):
     db.collection('games').document(str(user_id)).delete()
+    
+# --- TYTUŁY (TITLE SYSTEM) ---
+def set_title(user_id, title):
+    """Ustawia tytuł użytkownika (np. 'Król')."""
+    user_ref = db.collection('users').document(str(user_id))
+    user_ref.set({'title': title}, merge=True)
+
+def get_title(user_id):
+    """Pobiera tytuł użytkownika."""
+    user_ref = db.collection('users').document(str(user_id))
+    doc = user_ref.get()
+    if doc.exists:
+        return doc.to_dict().get('title', "")
+    return ""

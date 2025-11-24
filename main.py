@@ -13,6 +13,8 @@ from commands.fun.roulette import ROULETTE_DATA, cmd_roulette
 from commands.fun.slots import SLOTS_DATA, cmd_slots
 from commands.fun.eightball import EIGHTBALL_DATA, cmd_eightball
 from commands.fun.coinflip import COINFLIP_DATA, cmd_coinflip
+from commands.fun.ship import SHIP_DATA, cmd_ship
+from commands.fun.avatar import AVATAR_DATA, cmd_avatar
 
 # Root & Admin
 from commands.root.synctest import SYNCTEST_DATA, cmd_synctest
@@ -26,6 +28,7 @@ from commands.economy.pay import PAY_DATA, cmd_pay
 from commands.economy.work import WORK_DATA, cmd_work
 from commands.economy.shop import SHOP_DATA, cmd_shop
 from commands.economy.rob import ROB_DATA, cmd_rob
+from commands.economy.titles import BUY_TITLE_DATA, cmd_buy_title
 
 app = Flask(__name__)
 
@@ -51,6 +54,7 @@ ALL_COMMANDS = [
     WORK_DATA,
     SHOP_DATA,
     ROB_DATA,
+    BUY_TITLE_DATA,
     
     # Fun / Games
     POKER_DATA,
@@ -58,7 +62,9 @@ ALL_COMMANDS = [
     ROULETTE_DATA,
     SLOTS_DATA,
     EIGHTBALL_DATA,
-    COINFLIP_DATA
+    COINFLIP_DATA,
+    AVATAR_DATA,
+    SHIP_DATA
 ]
 
 # --- MAPA FUNKCJI (Logika) ---
@@ -77,6 +83,7 @@ COMMAND_HANDLERS = {
     "work": cmd_work,
     "shop": cmd_shop,
     "rob": cmd_rob,
+    "buy_title": cmd_buy_title,
     
     # Fun / Games
     "poker": cmd_poker,
@@ -84,7 +91,9 @@ COMMAND_HANDLERS = {
     "roulette": cmd_roulette,
     "slots": cmd_slots,
     "8ball": cmd_eightball,
-    "coinflip": cmd_coinflip
+    "coinflip": cmd_coinflip,
+    "avatar": cmd_avatar,
+    "ship": cmd_ship
 }
 
 # --- ENDPOINTY ---
