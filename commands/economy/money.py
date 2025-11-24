@@ -1,6 +1,7 @@
-from database import get_balance, claim_daily
+# Dodajemy check_cooldown do importów
+from database import get_balance, claim_daily, check_cooldown
 
-# --- DEFINICJA BALANCE ---
+# --- DEFINICJA BALANCE (Bez zmian) ---
 BALANCE_DATA = {
     "name": "balance",
     "description": "Check your wallet balance",
@@ -21,7 +22,7 @@ def cmd_balance(data):
         }
     }
 
-# --- DEFINICJA DAILY ---
+# --- DEFINICJA DAILY (Z NAPRAWIONĄ BLOKADĄ) ---
 DAILY_DATA = {
     "name": "daily",
     "description": "Collect your daily 1000 chips",
@@ -33,6 +34,23 @@ def cmd_daily(data):
     user = member.get("user", {})
     user_id = user.get("id")
     
+    # 1. Sprawdź cooldown (86400 sekund = 24 godziny)
+    # Funkcja check_cooldown musi być w database.py!
+    can_claim, time_left = check_cooldown(user_id, "daily", 86400)
+    
+    if not can_claim:
+        # Obliczamy ile czasu zostało
+        hours = int(time_left // 3600)
+        minutes = int((time_left % 3600) // 60)
+        
+        return {
+            "type": 4,
+            "data": {
+                "content": f"⏳ **Hol' up!** You already claimed your daily reward.\nCome back in **{hours}h {minutes}m**."
+            }
+        }
+
+    # 2. Jeśli można odebrać -> Wypłać
     new_balance = claim_daily(user_id)
     
     return {
