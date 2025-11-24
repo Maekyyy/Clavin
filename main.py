@@ -8,25 +8,29 @@ from nacl.exceptions import BadSignatureError
 from commands.fun.hello import HELLO_DATA, cmd_hello
 from commands.root.synctest import SYNCTEST_DATA, cmd_synctest
 from commands.admin.server import SERVER_DATA, cmd_server_info
+# NOWY IMPORT:
+from commands.admin.help import HELP_DATA, cmd_help
 
 app = Flask(__name__)
 
 # --- KONFIGURACJA ---
 PUBLIC_KEY = os.environ.get("DISCORD_PUBLIC_KEY")
 BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
-APP_ID = os.environ.get("DISCORD_APP_ID")  # <-- Twoje ID wpisane na sztywno
+APP_ID = os.environ.get("DISCORD_APP_ID")
 
 # --- REJESTR KOMEND ---
 ALL_COMMANDS = [
     HELLO_DATA,
     SYNCTEST_DATA,
-    SERVER_DATA
+    SERVER_DATA,
+    HELP_DATA   # <--- DODAJEMY TUTAJ
 ]
 
 COMMAND_HANDLERS = {
     "hello": cmd_hello,
     "synctest": cmd_synctest,
-    "serverinfo": cmd_server_info
+    "serverinfo": cmd_server_info,
+    "help": cmd_help  # <--- I DODAJEMY TUTAJ
 }
 
 # --- ENDPOINTY ---
@@ -47,7 +51,7 @@ def interactions():
     
     if r["type"] == 2:
         name = r["data"]["name"]
-        # Przekazujemy dodatkowe dane kontekstowe
+        # Context data
         if "guild_id" in r: r["data"]["guild_id"] = r["guild_id"]
         if "member" in r: r["data"]["member"] = r["member"]
 
