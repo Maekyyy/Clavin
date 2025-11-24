@@ -16,14 +16,12 @@ def cmd_help(data):
                     "fields": [
                         {
                             "name": "💰 Economy Module",
-                            # Zmiana z leaderboard na richlist:
-                            "value": "`/balance` - Wallet\n`/daily` - Free chips\n`/pay` - Send money\n`/richlist` - Top players",
+                            "value": "`/balance` `/daily` `/pay` `/richlist`\n`/work` - Earn money\n`/shop` - Buy items\n`/rob` - Steal from others!",
                             "inline": False
                         },
-                        {  
+                        {
                             "name": "🎉 Fun Module",
-                            # Dodajemy roulette:
-                            "value": "`/poker` - Video Poker\n`/roulette` - Casino Roulette\n`/cat` - Cat pictures\n`/hello` - Greetings",
+                            "value": "`/poker` `/roulette` `/coinflip` `/cat` `/hello`",
                             "inline": False
                         },
                         {
