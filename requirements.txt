@@ -1,4 +1,4 @@
-# The discord library used (e.g., py-cord or discord.py)
-# py-cord
-discord.py
-flask  # Adding Flask for Google Cloud Run
+Flask==3.0.0
+pynacl==1.5.0
+requests==2.31.0
+gunicorn==21.2.0

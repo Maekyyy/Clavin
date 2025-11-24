@@ -1,17 +1,15 @@
-# Use the official Python image as a base
+# Używamy nowszego, szybszego Pythona
 FROM python:3.11-slim
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the requirements file and install dependencies
+# Instalacja zależności
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the bot's code into the container
-# Ensure your main bot file is named 'bot.py'
+# Kopiowanie kodu
 COPY . .
 
-# Specify the command to run when the container starts
-# This command executes your bot script
-CMD ["python", "bot.py"]
+# Ważne: W Cloud Run Serverless używamy gunicorn, nie python bot.py
+# main:app oznacza: plik main.py, obiekt app
+CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
