@@ -4,25 +4,24 @@ from flask import Flask, jsonify, request
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
 
-# Importy komend
+# === MODULE IMPORTS ===
 from commands.fun.hello import HELLO_DATA, cmd_hello
 from commands.root.synctest import SYNCTEST_DATA, cmd_synctest
 from commands.admin.server import SERVER_DATA, cmd_server_info
 from commands.admin.help import HELP_DATA, cmd_help
 from commands.economy.money import BALANCE_DATA, cmd_balance, DAILY_DATA, cmd_daily
-# Poker Importuje teraz dwie funkcje: komendę i obsługę przycisku
+# Poker imports both the command and the button handler
 from commands.fun.poker import POKER_DATA, cmd_poker, handle_poker_component
-# NOWE: Import kota
 from commands.fun.cat import CAT_DATA, cmd_cat 
 
 app = Flask(__name__)
 
-# Konfiguracja
+# --- CONFIGURATION ---
 PUBLIC_KEY = os.environ.get("DISCORD_PUBLIC_KEY")
 BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 APP_ID = os.environ.get("DISCORD_APP_ID")
 
-# Listy
+# --- COMMAND REGISTRY ---
 ALL_COMMANDS = [
         HELLO_DATA, 
         SYNCTEST_DATA, 
@@ -33,6 +32,7 @@ ALL_COMMANDS = [
         POKER_DATA,
         CAT_DATA
     ]
+
 COMMAND_HANDLERS = {
     "hello": cmd_hello,
     "synctest": cmd_synctest,
@@ -42,12 +42,12 @@ COMMAND_HANDLERS = {
     "daily": cmd_daily,
     "poker": cmd_poker,
     "cat": cmd_cat
-    
 }
 
+# --- ENDPOINTS ---
 @app.route('/', methods=['POST'])
 def interactions():
-    # ... weryfikacja klucza bez zmian ...
+    # Verify signature
     verify_key = VerifyKey(bytes.fromhex(PUBLIC_KEY))
     signature = request.headers.get('X-Signature-Ed25519')
     timestamp = request.headers.get('X-Signature-Timestamp')
@@ -62,7 +62,7 @@ def interactions():
     # 1. PING
     if r["type"] == 1: return jsonify({"type": 1})
     
-    # 2. SLASH COMMANDS (Wpisanie komendy)
+    # 2. SLASH COMMANDS
     if r["type"] == 2:
         name = r["data"]["name"]
         if "guild_id" in r: r["data"]["guild_id"] = r["guild_id"]
@@ -71,18 +71,17 @@ def interactions():
         if name in COMMAND_HANDLERS:
             return jsonify(COMMAND_HANDLERS[name](r["data"]))
     
-    # 3. COMPONENT INTERACTION (Kliknięcie przycisku!) <--- NOWOŚĆ
+    # 3. COMPONENT INTERACTION (Buttons)
     if r["type"] == 3:
         custom_id = r["data"]["custom_id"]
         
-        # Jeśli ID przycisku zaczyna się od "poker_", wyślij do pokera
+        # If button ID starts with "poker_", route to poker handler
         if custom_id.startswith("poker_"):
-            # Przekazujemy całe 'r', bo potrzebujemy danych usera
             return jsonify(handle_poker_component(r))
 
     return jsonify({"error": "unknown interaction"}), 400
 
-# ... reszta pliku (refresh-commands) bez zmian ...
+# Magic Link to refresh commands on Discord
 @app.route('/admin/refresh-commands', methods=['GET'])
 def refresh_commands():
     url = f"https://discord.com/api/v10/applications/{APP_ID}/commands"

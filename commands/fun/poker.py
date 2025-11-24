@@ -1,7 +1,7 @@
 import random
 from database import get_balance, update_balance, set_game_state, get_game_state, delete_game_state
 
-# --- DEFINICJA KOMENDY ---
+# --- COMMAND DEFINITION ---
 POKER_DATA = {
     "name": "poker",
     "description": "Play 5-Card Draw Poker (with swapping!)",
@@ -14,25 +14,25 @@ POKER_DATA = {
     }]
 }
 
-# --- STAŁE ---
+# --- CONSTANTS ---
 SUITS = ["♠️", "♥️", "♦️", "♣️"]
 RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
 VALUES = {r: i for i, r in enumerate(RANKS, 2)}
 
-# --- LOGIKA KART ---
+# --- CARD LOGIC ---
 def get_deck():
-    """Tworzy nową przetasowaną talię."""
+    """Creates a new shuffled deck."""
     deck = [{'rank': r, 'suit': s} for s in SUITS for r in RANKS]
     random.shuffle(deck)
     return deck
 
 def get_hand_result(hand):
-    """Ocenia rękę i zwraca (Nazwa, Mnożnik, Kolor)."""
+    """Evaluates the hand and returns (Name, Multiplier, Color)."""
     hand_sorted = sorted(hand, key=lambda c: VALUES[c['rank']])
     ranks = [c['rank'] for c in hand_sorted]
     suits = [c['suit'] for c in hand_sorted]
     
-    # Sprawdzanie układów
+    # Check patterns
     is_flush = len(set(suits)) == 1
     
     indices = [VALUES[r] for r in ranks]
@@ -42,7 +42,7 @@ def get_hand_result(hand):
     counts = {r: ranks.count(r) for r in set(ranks)}
     count_values = sorted(counts.values(), reverse=True)
 
-    # Tabela wypłat (Lucky Mode)
+    # Payout Table (Lucky Mode)
     if is_flush and is_straight:
         if "A" in ranks and "10" in ranks: return "👑 Royal Flush!", 250, 0xdfb404
         return "🔥 Straight Flush!", 50, 0xe74c3c
@@ -53,22 +53,22 @@ def get_hand_result(hand):
     if 3 in count_values: return "3️⃣ Three of a Kind!", 3, 0xe67e22
     if count_values.count(2) == 2: return "2️⃣ Two Pair!", 2, 0xf1c40f
     
-    # Pary
+    # Pairs
     if 2 in count_values:
         is_high = any(count == 2 and VALUES[rank] >= 11 for rank, count in counts.items())
-        if is_high: return "1️⃣ High Pair (Jacks+)", 1, 0x95a5a6 # Tylko zwrot (x1)
-        return "1️⃣ Small Pair", 0, 0x2b2d31 # Przegrana (x0) - tak jest w prawdziwym draw pokerze!
+        if is_high: return "1️⃣ High Pair (Jacks+)", 1, 0x95a5a6 # Money back (x1)
+        return "1️⃣ Small Pair", 0, 0x2b2d31 # Loss (x0)
 
     return "💨 High Card", 0, 0x2b2d31
 
-# --- GENEROWANIE PRZYCISKÓW ---
+# --- BUTTON GENERATOR ---
 def build_components(held_indices, game_over=False):
-    """Tworzy przyciski pod kartami."""
+    """Creates buttons below cards."""
     if game_over:
-        return [] # Brak przycisków na koniec gry
+        return []
 
     buttons = []
-    # 5 Przycisków do kart
+    # 5 Card Buttons
     for i in range(5):
         is_held = i in held_indices
         buttons.append({
@@ -78,57 +78,56 @@ def build_components(held_indices, game_over=False):
             "custom_id": f"poker_hold_{i}"
         })
     
-    # Przycisk DRAW (Wymień)
+    # DRAW Button
     draw_btn = {
         "type": 2,
-        "style": 1, # Blurple (Niebieski)
+        "style": 1, # Blurple (Blue)
         "label": "🎲 DRAW (Exchange)",
         "custom_id": "poker_draw"
     }
 
-    # Układamy w rzędy (max 5 na rząd)
     return [
-        {"type": 1, "components": buttons}, # Rząd 1: Karty
-        {"type": 1, "components": [draw_btn]} # Rząd 2: Draw
+        {"type": 1, "components": buttons}, # Row 1: Cards
+        {"type": 1, "components": [draw_btn]} # Row 2: Draw
     ]
 
-# --- START GRY (/poker) ---
+# --- GAME START (/poker) ---
 def cmd_poker(data):
     user = data["member"]["user"]
     user_id = user["id"]
     
-    # Sprawdź czy gra już trwa
+    # Check if game exists
     if get_game_state(user_id):
-        return {"type": 4, "data": {"content": "❌ Masz już otwartą grę! Dokończ ją najpierw."}}
+        return {"type": 4, "data": {"content": "❌ You already have an active game! Finish it first."}}
 
-    # Pobierz zakład
+    # Get bet
     bet = data["options"][0]["value"] if data.get("options") else 0
     
-    # Sprawdź kasę
+    # Check funds
     if get_balance(user_id) < bet:
-        return {"type": 4, "data": {"content": "❌ Nie masz tyle pieniędzy!"}}
+        return {"type": 4, "data": {"content": "❌ You don't have enough money!"}}
     
     if bet < 1:
-        return {"type": 4, "data": {"content": "❌ Zakład musi być większy niż 0."}}
+        return {"type": 4, "data": {"content": "❌ Bet must be greater than 0."}}
 
-    # Zabierz kasę
+    # Deduct bet
     update_balance(user_id, -bet)
 
-    # Rozdaj karty
+    # Deal cards
     deck = get_deck()
     hand = deck[:5]
     remaining_deck = deck[5:]
 
-    # Zapisz stan do bazy
+    # Save state
     game_data = {
         "bet": bet,
         "hand": hand,
         "deck": remaining_deck,
-        "held": [] # Indeksy kart do zatrzymania
+        "held": [] # Indices of held cards
     }
     set_game_state(user_id, game_data)
 
-    # Wyświetl
+    # Display
     cards_str = " ".join([f"`{c['rank']}{c['suit']}`" for c in hand])
     
     return {
@@ -136,35 +135,35 @@ def cmd_poker(data):
         "data": {
             "content": f"🎰 **Video Poker** | Bet: ${bet}",
             "embeds": [{
-                "description": f"Twoja ręka:\n# {cards_str}\n\nKliknij przyciski, aby zatrzymać karty (HOLD). Reszta zostanie wymieniona.",
+                "description": f"Your Hand:\n# {cards_str}\n\nClick buttons to **HOLD** cards. The rest will be swapped.",
                 "color": 0x2b2d31
             }],
             "components": build_components([])
         }
     }
 
-# --- OBSŁUGA KLIKNIĘĆ (INTERAKCJE) ---
+# --- INTERACTION HANDLER (Clicks) ---
 def handle_poker_component(data):
     user_id = data["member"]["user"]["id"]
     custom_id = data["data"]["custom_id"]
     
     game = get_game_state(user_id)
     if not game:
-        return {"type": 4, "data": {"content": "❌ Ta gra wygasła. Wpisz /poker aby zagrać nową.", "flags": 64}}
+        return {"type": 4, "data": {"content": "❌ This game has expired. Type /poker to play again.", "flags": 64}}
 
-    # 1. KLIKNIĘCIE KARTY (HOLD)
+    # 1. HOLD CARD
     if custom_id.startswith("poker_hold_"):
         idx = int(custom_id.split("_")[-1])
         
-        # Przełącz stan (dodaj/usuń z held)
+        # Toggle hold status
         if idx in game["held"]:
             game["held"].remove(idx)
         else:
             game["held"].append(idx)
         
-        set_game_state(user_id, game) # Aktualizuj bazę
+        set_game_state(user_id, game) # Update DB
         
-        # Aktualizuj tylko przyciski (nie zmieniaj kart jeszcze)
+        # Update buttons only
         return {
             "type": 7, # Update Message
             "data": {
@@ -172,37 +171,37 @@ def handle_poker_component(data):
             }
         }
 
-    # 2. KLIKNIĘCIE DRAW (FINAŁ)
+    # 2. DRAW (FINISH)
     if custom_id == "poker_draw":
         hand = game["hand"]
         deck = game["deck"]
         held = game["held"]
         bet = game["bet"]
 
-        # Wymiana kart
+        # Swap cards
         new_hand = []
         for i in range(5):
             if i in held:
-                new_hand.append(hand[i]) # Zostaw
+                new_hand.append(hand[i]) # Keep
             else:
-                new_hand.append(deck.pop(0)) # Dobierz nową
+                new_hand.append(deck.pop(0)) # Draw new
         
-        # Wynik
+        # Result
         name, mult, color = get_hand_result(new_hand)
         winnings = bet * mult
         
         if winnings > 0:
             update_balance(user_id, winnings)
-            result_msg = f"**WYGRANA!** +${winnings}"
+            result_msg = f"**WINNER!** +${winnings}"
         else:
-            result_msg = f"**PRZEGRANA** -${bet}"
+            result_msg = f"**LOST** -${bet}"
             
         new_balance = get_balance(user_id)
         
-        # Czyścimy bazę
+        # Cleanup
         delete_game_state(user_id)
 
-        # Finalny wygląd
+        # Final display
         final_cards = " ".join([f"`{c['rank']}{c['suit']}`" for c in new_hand])
         
         return {
@@ -210,9 +209,9 @@ def handle_poker_component(data):
             "data": {
                 "embeds": [{
                     "title": name,
-                    "description": f"Ostateczna ręka:\n# {final_cards}\n\n{result_msg}\nStan konta: **${new_balance}**",
+                    "description": f"Final Hand:\n# {final_cards}\n\n{result_msg}\nWallet: **${new_balance}**",
                     "color": color
                 }],
-                "components": [] # Usuń przyciski
+                "components": [] # Remove buttons
             }
         }

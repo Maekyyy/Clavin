@@ -12,12 +12,16 @@ def cmd_help(data):
                 {
                     "title": "📜 Clavin Bot Command List",
                     "description": "Here is a list of all available bot functions:",
-                    "color": 0x3498db,  # Blue color
+                    "color": 0x3498db,  # Blue
                     "fields": [
                         {
+                            "name": "💰 Economy Module",
+                            "value": "`/balance` - Check your wallet\n`/daily` - Collect daily reward",
+                            "inline": False
+                        },
+                        {
                             "name": "🎉 Fun Module",
-                            # Dopisz /cat na końcu:
-                            "value": "`/hello` - Say hello to the bot\n`/poker` - Play a hand of cards\n`/cat` - Random cat picture",
+                            "value": "`/poker` - Play Video Poker (Bet chips!)\n`/cat` - Random cat picture\n`/hello` - Say hello",
                             "inline": False
                         },
                         {
