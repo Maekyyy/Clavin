@@ -9,23 +9,31 @@ from nacl.exceptions import BadSignatureError
 #              MODULE IMPORTS
 # ==========================================
 
-# --- FUN & GAMES ---
+# --- FUN (Simple stuff) ---
 from commands.fun.hello import HELLO_DATA, cmd_hello
 from commands.fun.cat import CAT_DATA, cmd_cat
 from commands.fun.eightball import EIGHTBALL_DATA, cmd_eightball
-from commands.fun.ship import SHIP_DATA, cmd_ship
-from commands.fun.avatar import AVATAR_DATA, cmd_avatar
-from commands.fun.ai import AI_DATA, cmd_ask
 
-# Games with Logic
-from commands.fun.coinflip import COINFLIP_DATA, cmd_coinflip
-from commands.fun.slots import SLOTS_DATA, cmd_slots
-from commands.fun.roulette import ROULETTE_DATA, cmd_roulette
+# --- UTILITY (Tools) ---
+from commands.utility.ai import AI_DATA, cmd_ask
+from commands.utility.poll import POLL_DATA, cmd_poll, handle_poll_component
 
-# Games with Buttons (Components)
-from commands.fun.poker import POKER_DATA, cmd_poker, handle_poker_component
-from commands.fun.blackjack import BLACKJACK_DATA, cmd_blackjack, handle_blackjack_component
-from commands.fun.duel import DUEL_DATA, cmd_duel, handle_duel_component
+# --- SOCIAL (User interactions) ---
+from commands.social.profile import PROFILE_DATA, cmd_profile
+from commands.social.avatar import AVATAR_DATA, cmd_avatar
+from commands.social.ship import SHIP_DATA, cmd_ship
+from commands.social.marry import MARRY_DATA, DIVORCE_DATA, cmd_marry, cmd_divorce, handle_marry_component
+
+# --- GAMES (Casino & Minigames) ---
+from commands.games.coinflip import COINFLIP_DATA, cmd_coinflip
+from commands.games.slots import SLOTS_DATA, cmd_slots
+from commands.games.roulette import ROULETTE_DATA, cmd_roulette
+from commands.games.rps import RPS_DATA, cmd_rps
+from commands.games.trivia import TRIVIA_DATA, cmd_trivia, handle_trivia_component
+# Games with Buttons
+from commands.games.poker import POKER_DATA, cmd_poker, handle_poker_component
+from commands.games.blackjack import BLACKJACK_DATA, cmd_blackjack, handle_blackjack_component
+from commands.games.duel import DUEL_DATA, cmd_duel, handle_duel_component
 
 # --- ECONOMY & RPG ---
 from commands.economy.money import BALANCE_DATA, cmd_balance, DAILY_DATA, cmd_daily
@@ -36,6 +44,9 @@ from commands.economy.shop import SHOP_DATA, cmd_shop, handle_shop_component
 from commands.economy.rob import ROB_DATA, cmd_rob
 from commands.economy.titles import BUY_TITLE_DATA, cmd_buy_title
 from commands.economy.crypto import CRYPTO_DATA, cmd_crypto
+# GTA Module
+from commands.economy.gta import CRIME_DATA, BUSINESS_DATA, BUY_BIZ_DATA, LAUNDER_DATA
+from commands.economy.gta import cmd_crime, cmd_businesses, cmd_buy_business, cmd_launder
 
 # --- LEVELS ---
 from commands.levels.rank import RANK_DATA, cmd_rank, LEADERBOARD_XP_DATA, cmd_leaderboard_xp
@@ -46,11 +57,8 @@ from commands.admin.server import SERVER_DATA, cmd_server_info
 from commands.admin.help import HELP_DATA, cmd_help
 from commands.admin.moderation import CLEAR_DATA, cmd_clear, KICK_DATA, cmd_kick, BAN_DATA, cmd_ban
 
-# --- DATABASE (XP SYSTEM) ---
+# --- DATABASE ---
 from database import add_xp
-
-# --- POLLS ---
-from commands.fun.poll import POLL_DATA, cmd_poll, handle_poll_component
 
 app = Flask(__name__)
 
@@ -65,16 +73,23 @@ APP_ID = os.environ.get("DISCORD_APP_ID")
 #           COMMAND REGISTRY
 # ==========================================
 ALL_COMMANDS = [
-    # Fun & AI
-    HELLO_DATA, CAT_DATA, EIGHTBALL_DATA, SHIP_DATA, AVATAR_DATA, AI_DATA,
+    # Fun
+    HELLO_DATA, CAT_DATA, EIGHTBALL_DATA,
+    
+    # Utility
+    AI_DATA, POLL_DATA,
+    
+    # Social
+    PROFILE_DATA, AVATAR_DATA, SHIP_DATA, MARRY_DATA, DIVORCE_DATA,
     
     # Games
-    COINFLIP_DATA, SLOTS_DATA, ROULETTE_DATA,
-    POKER_DATA, BLACKJACK_DATA, DUEL_DATA, POLL_DATA,
+    COINFLIP_DATA, SLOTS_DATA, ROULETTE_DATA, RPS_DATA, TRIVIA_DATA,
+    POKER_DATA, BLACKJACK_DATA, DUEL_DATA,
     
-    # Economy
+    # Economy & GTA
     BALANCE_DATA, DAILY_DATA, PAY_DATA, RICHLIST_DATA,
     WORK_DATA, SHOP_DATA, ROB_DATA, BUY_TITLE_DATA, CRYPTO_DATA,
+    CRIME_DATA, BUSINESS_DATA, BUY_BIZ_DATA, LAUNDER_DATA,
     
     # Levels
     RANK_DATA, LEADERBOARD_XP_DATA,
@@ -90,15 +105,23 @@ ALL_COMMANDS = [
 COMMAND_HANDLERS = {
     # Fun
     "hello": cmd_hello, "cat": cmd_cat, "8ball": cmd_eightball,
-    "ship": cmd_ship, "avatar": cmd_avatar, "ask": cmd_ask,
+    
+    # Utility
+    "ask": cmd_ask, "poll": cmd_poll,
+    
+    # Social
+    "profile": cmd_profile, "avatar": cmd_avatar, "ship": cmd_ship, 
+    "marry": cmd_marry, "divorce": cmd_divorce,
     
     # Games
-    "coinflip": cmd_coinflip, "slots": cmd_slots, "roulette": cmd_roulette,
-    "poker": cmd_poker, "blackjack": cmd_blackjack, "duel": cmd_duel, "poll": cmd_poll,
+    "coinflip": cmd_coinflip, "slots": cmd_slots, "roulette": cmd_roulette, 
+    "rps": cmd_rps, "trivia": cmd_trivia,
+    "poker": cmd_poker, "blackjack": cmd_blackjack, "duel": cmd_duel,
     
-    # Economy
+    # Economy & GTA
     "balance": cmd_balance, "daily": cmd_daily, "pay": cmd_pay, "richlist": cmd_richlist,
     "work": cmd_work, "shop": cmd_shop, "rob": cmd_rob, "buy_title": cmd_buy_title, "crypto": cmd_crypto,
+    "crime": cmd_crime, "businesses": cmd_businesses, "buy_business": cmd_buy_business, "launder": cmd_launder,
     
     # Levels
     "rank": cmd_rank, "leaderboard": cmd_leaderboard_xp,
@@ -114,7 +137,6 @@ COMMAND_HANDLERS = {
 
 @app.route('/', methods=['POST'])
 def interactions():
-    # 1. Security Verification
     verify_key = VerifyKey(bytes.fromhex(PUBLIC_KEY))
     signature = request.headers.get('X-Signature-Ed25519')
     timestamp = request.headers.get('X-Signature-Timestamp')
@@ -127,47 +149,38 @@ def interactions():
 
     r = request.json
     
-    # 2. Handle PING (Required by Discord)
+    # 1. PING
     if r["type"] == 1:
         return jsonify({"type": 1})
     
     # --- GLOBAL XP SYSTEM ---
-    # Award XP for every interaction (commands or buttons)
     leveled_up = False
     new_lvl = 0
     
     if "member" in r:
         user_id = r["member"]["user"]["id"]
-        # Random XP gain (5-15)
         xp_gain = random.randint(5, 15)
         new_lvl, leveled_up = add_xp(user_id, xp_gain)
     
-    # 3. Handle SLASH COMMANDS
+    # 2. SLASH COMMANDS
     if r["type"] == 2:
         name = r["data"]["name"]
         
-        # Pass extra context
+        # Context passing
         if "guild_id" in r: r["data"]["guild_id"] = r["guild_id"]
         if "member" in r: r["data"]["member"] = r["member"]
-        
-        # Pass token and app_id (Critical for AI / deferred responses)
         r["data"]["token"] = r.get("token")
         r["data"]["application_id"] = r.get("application_id")
-        
-        # Pass channel_id (Critical for moderation)
         if "channel_id" in r: r["data"]["channel_id"] = r["channel_id"]
-        
-        # Pass resolved data (Critical for Avatar/User info)
         if "data" in r and "resolved" in r["data"]:
              r["data"]["resolved"] = r["data"]["resolved"]
 
         if name in COMMAND_HANDLERS:
             response = COMMAND_HANDLERS[name](r["data"])
             
-            # Append Level Up message if applicable (only for standard responses)
+            # XP Notification
             if leveled_up and isinstance(response, dict) and "data" in response:
                 msg = response["data"].get("content", "")
-                # Create content if empty, or add new line
                 prefix = "\n\n" if msg else ""
                 response["data"]["content"] = f"{msg}{prefix}⭐ **LEVEL UP!** You reached **Level {new_lvl}**!"
             
@@ -175,51 +188,37 @@ def interactions():
             
         return jsonify({"error": "unknown command"}), 400
     
-    # 4. Handle COMPONENT INTERACTIONS (Buttons & Selects)
+    # 3. COMPONENTS (BUTTONS/SELECTS)
     if r["type"] == 3:
         custom_id = r["data"]["custom_id"]
-        
         response = None
         
-        # Game Handlers
-        if custom_id.startswith("poker_"):
-            response = handle_poker_component(r)
-        elif custom_id.startswith("bj_"):
-            response = handle_blackjack_component(r)
-        elif custom_id.startswith("duel_"):
-            response = handle_duel_component(r)
-        elif custom_id.startswith("poll_"):
-            response = handle_poll_component(r)
+        # Games
+        if custom_id.startswith("poker_"): response = handle_poker_component(r)
+        elif custom_id.startswith("bj_"): response = handle_blackjack_component(r)
+        elif custom_id.startswith("duel_"): response = handle_duel_component(r)
+        elif custom_id.startswith("trivia_"): response = handle_trivia_component(r)
         
-        # Shop Handler
-        elif custom_id == "shop_buy_select":
-            response = handle_shop_component(r)
-            
-        # Trivia / Marry handlers (if you added them, make sure to import and add here)
-        # Example:
-        # elif custom_id.startswith("trivia_"): response = handle_trivia_component(r)
-        # elif custom_id.startswith("marry_"): response = handle_marry_component(r)
+        # Utility & Social
+        elif custom_id.startswith("poll_"): response = handle_poll_component(r)
+        elif custom_id.startswith("marry_"): handle_marry_component(r)
+        
+        # Economy
+        elif custom_id == "shop_buy_select": response = handle_shop_component(r)
             
         if response:
             return jsonify(response)
 
     return jsonify({"error": "unknown interaction"}), 400
 
-# --- MAGIC LINK (Refresh Commands) ---
 @app.route('/admin/refresh-commands', methods=['GET'])
 def refresh_commands():
     if not APP_ID or not BOT_TOKEN:
-        return "Missing configuration (APP_ID or BOT_TOKEN).", 500
-        
+        return "Missing config", 500
     url = f"https://discord.com/api/v10/applications/{APP_ID}/commands"
     headers = {"Authorization": f"Bot {BOT_TOKEN}"}
-    
     r = requests.put(url, headers=headers, json=ALL_COMMANDS)
-    
-    if r.status_code in [200, 201]:
-        return f"✅ Success! Registered {len(ALL_COMMANDS)} commands.<br>API Response: {r.status_code}"
-    else:
-        return f"❌ Error: {r.status_code}<br>{r.text}"
+    return f"Status: {r.status_code}<br>{r.text}"
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
