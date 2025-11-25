@@ -24,9 +24,9 @@ def cmd_help(data):
                             "value": "`poker` - Video Poker\n`blackjack` - Classic 21\n`roulette` - Casino Roulette\n`slots` - Slot Machine\n`coinflip` - Heads or Tails\n`duel` - Challenge a player",
                             "inline": False
                         },
-                        {
-                            "name": "🎉 Fun & Social",
-                            "value": "`cat` `hello` `8ball`\n`ship` - Love Calculator\n`avatar` - Get User Picture",
+{
+                            "name": "🎉 Fun Module",
+                            "value": "`/poker` `/blackjack` `/roulette` `/coinflip`\n`/poll` - Create voting poll\n`/cat` `/hello` `/8ball`",
                             "inline": False
                         },
                         {
@@ -35,8 +35,8 @@ def cmd_help(data):
                             "inline": False
                         },
                         {
-                            "name": "⚙️ System",
-                            "value": "`serverinfo` `synctest` `help`",
+                            "name": "🛡️ Admin & Moderation",
+                            "value": "`/serverinfo` - Server stats\n`/clear` - Delete messages\n`/kick` - Kick user\n`/ban` - Ban user\n`/help` - Show commands",
                             "inline": False
                         }
                     ],

@@ -199,3 +199,42 @@ def get_level_data(user_id):
 
 def get_xp_leaderboard(limit=10):
     return db.collection('users').order_by('level', direction=firestore.Query.DESCENDING).limit(limit).stream()
+
+# ==========================================
+#              POLL SYSTEM
+# ==========================================
+
+def create_poll(poll_id, question, options):
+    """Tworzy nową ankietę w bazie."""
+    db.collection('polls').document(poll_id).set({
+        'question': question,
+        'options': options, # Lista opcji
+        'votes': {}, # Mapa user_id -> option_index
+        'created_at': int(time.time())
+    })
+
+def get_poll(poll_id):
+    """Pobiera dane ankiety."""
+    doc = db.collection('polls').document(poll_id).get()
+    return doc.to_dict() if doc.exists else None
+
+def add_vote(poll_id, user_id, option_index):
+    """Zapisuje głos użytkownika (nadpisuje poprzedni)."""
+    poll_ref = db.collection('polls').document(poll_id)
+    
+    @firestore.transactional
+    def tx_vote(transaction, ref):
+        snapshot = ref.get(transaction=transaction)
+        if not snapshot.exists: return False
+        
+        data = snapshot.to_dict()
+        votes = data.get('votes', {})
+        
+        # Zapisz głos (str(user_id) jako klucz)
+        votes[str(user_id)] = option_index
+        
+        transaction.update(ref, {'votes': votes})
+        return True
+
+    transaction = db.transaction()
+    return tx_vote(transaction, poll_ref)

@@ -1,6 +1,6 @@
 import os
 import requests
-import random # For XP randomization
+import random
 from flask import Flask, jsonify, request
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
@@ -15,6 +15,7 @@ from commands.fun.cat import CAT_DATA, cmd_cat
 from commands.fun.eightball import EIGHTBALL_DATA, cmd_eightball
 from commands.fun.ship import SHIP_DATA, cmd_ship
 from commands.fun.avatar import AVATAR_DATA, cmd_avatar
+from commands.fun.poll import POLL_DATA, cmd_poll, handle_poll_component
 # Games with Logic
 from commands.fun.coinflip import COINFLIP_DATA, cmd_coinflip
 from commands.fun.slots import SLOTS_DATA, cmd_slots
@@ -42,7 +43,7 @@ from commands.root.synctest import SYNCTEST_DATA, cmd_synctest
 from commands.admin.server import SERVER_DATA, cmd_server_info
 from commands.admin.help import HELP_DATA, cmd_help
 
-# Database for XP Tracking
+# --- DATABASE (XP SYSTEM) ---
 from database import add_xp
 
 app = Flask(__name__)
@@ -61,7 +62,7 @@ ALL_COMMANDS = [
     # Fun
     HELLO_DATA, CAT_DATA, EIGHTBALL_DATA, SHIP_DATA, AVATAR_DATA,
     COINFLIP_DATA, SLOTS_DATA, ROULETTE_DATA,
-    POKER_DATA, BLACKJACK_DATA, DUEL_DATA,
+    POKER_DATA, BLACKJACK_DATA, DUEL_DATA, POLL_DATA,
     # Economy
     BALANCE_DATA, DAILY_DATA, PAY_DATA, RICHLIST_DATA,
     WORK_DATA, SHOP_DATA, ROB_DATA, BUY_TITLE_DATA, CRYPTO_DATA,
@@ -79,7 +80,7 @@ COMMAND_HANDLERS = {
     "hello": cmd_hello, "cat": cmd_cat, "8ball": cmd_eightball,
     "ship": cmd_ship, "avatar": cmd_avatar,
     "coinflip": cmd_coinflip, "slots": cmd_slots, "roulette": cmd_roulette,
-    "poker": cmd_poker, "blackjack": cmd_blackjack, "duel": cmd_duel,
+    "poker": cmd_poker, "blackjack": cmd_blackjack, "duel": cmd_duel, "poll": cmd_poll,
     # Economy
     "balance": cmd_balance, "daily": cmd_daily, "pay": cmd_pay, "richlist": cmd_richlist,
     "work": cmd_work, "shop": cmd_shop, "rob": cmd_rob, "buy_title": cmd_buy_title, "crypto": cmd_crypto,
@@ -113,12 +114,13 @@ def interactions():
         return jsonify({"type": 1})
     
     # --- GLOBAL XP SYSTEM ---
-    # Award XP for every interaction
+    # Award XP for every interaction (commands or buttons)
     leveled_up = False
     new_lvl = 0
     
     if "member" in r:
         user_id = r["member"]["user"]["id"]
+        # Random XP gain (5-15)
         xp_gain = random.randint(5, 15)
         new_lvl, leveled_up = add_xp(user_id, xp_gain)
     
@@ -138,6 +140,7 @@ def interactions():
             # Append Level Up message if applicable
             if leveled_up and isinstance(response, dict) and "data" in response:
                 msg = response["data"].get("content", "")
+                # Create content if empty, or add new line
                 prefix = "\n\n" if msg else ""
                 response["data"]["content"] = f"{msg}{prefix}⭐ **LEVEL UP!** You reached **Level {new_lvl}**!"
             
@@ -150,12 +153,20 @@ def interactions():
         custom_id = r["data"]["custom_id"]
         
         # Route to specific game handlers
+        response = None
         if custom_id.startswith("poker_"):
-            return jsonify(handle_poker_component(r))
-        if custom_id.startswith("bj_"):
-            return jsonify(handle_blackjack_component(r))
-        if custom_id.startswith("duel_"):
-            return jsonify(handle_duel_component(r))
+            response = handle_poker_component(r)
+        elif custom_id.startswith("bj_"):
+            response = handle_blackjack_component(r)
+        elif custom_id.startswith("duel_"):
+            response = handle_duel_component(r)
+        elif custom_id.startswith("poll_"):
+            response = handle_poll_component(r)
+            
+        if response:
+            # (Optional) We could add level up message here too, 
+            # but usually we keep it for commands to avoid spam during gameplay.
+            return jsonify(response)
 
     return jsonify({"error": "unknown interaction"}), 400
 
