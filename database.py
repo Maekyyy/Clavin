@@ -113,15 +113,33 @@ def get_title(user_id):
     return doc.to_dict().get('title', "") if doc.exists else ""
 
 # ==========================================
-#           STAN GIER (Poker, itp.)
+#           STAN GIER (Poker, Blackjack)
 # ==========================================
 
 def set_game_state(user_id, game_data):
+    """Zapisuje stan gry. Dodaje znacznik czasu (created_at) do auto-resetu."""
+    game_data['created_at'] = int(time.time())
     db.collection('games').document(str(user_id)).set(game_data)
 
 def get_game_state(user_id):
-    doc = db.collection('games').document(str(user_id)).get()
-    return doc.to_dict() if doc.exists else None
+    """Pobiera grę. Jeśli jest starsza niż 10 min -> usuwa ją."""
+    doc_ref = db.collection('games').document(str(user_id))
+    doc = doc_ref.get()
+    
+    if not doc.exists:
+        return None
+        
+    data = doc.to_dict()
+    
+    # Auto-Reset: Sprawdź czy gra nie wisi dłużej niż 10 minut (600s)
+    created_at = data.get('created_at', 0)
+    now = int(time.time())
+    
+    if now - created_at > 600:
+        doc_ref.delete() # Usuń stare śmieci
+        return None
+        
+    return data
 
 def delete_game_state(user_id):
     db.collection('games').document(str(user_id)).delete()
@@ -208,8 +226,8 @@ def create_poll(poll_id, question, options):
     """Tworzy nową ankietę w bazie."""
     db.collection('polls').document(poll_id).set({
         'question': question,
-        'options': options, # Lista opcji
-        'votes': {}, # Mapa user_id -> option_index
+        'options': options,
+        'votes': {},
         'created_at': int(time.time())
     })
 
@@ -219,7 +237,7 @@ def get_poll(poll_id):
     return doc.to_dict() if doc.exists else None
 
 def add_vote(poll_id, user_id, option_index):
-    """Zapisuje głos użytkownika (nadpisuje poprzedni)."""
+    """Zapisuje głos użytkownika."""
     poll_ref = db.collection('polls').document(poll_id)
     
     @firestore.transactional
@@ -230,7 +248,6 @@ def add_vote(poll_id, user_id, option_index):
         data = snapshot.to_dict()
         votes = data.get('votes', {})
         
-        # Zapisz głos (str(user_id) jako klucz)
         votes[str(user_id)] = option_index
         
         transaction.update(ref, {'votes': votes})
@@ -246,7 +263,6 @@ def add_vote(poll_id, user_id, option_index):
 def get_businesses(user_id):
     """Pobiera listę posiadanych biznesów."""
     doc = db.collection('users').document(str(user_id)).get()
-    # Zwraca słownik: {'weed_farm': 1, 'meth_lab': 0}
     return doc.to_dict().get('businesses', {}) if doc.exists else {}
 
 def buy_business_db(user_id, business_id, cost):
@@ -256,31 +272,28 @@ def buy_business_db(user_id, business_id, cost):
     @firestore.transactional
     def tx_buy_biz(transaction, ref):
         snapshot = ref.get(transaction=transaction)
-        if not snapshot.exists: return False, "Brak konta"
+        if not snapshot.exists: return False, "No account"
         
         data = snapshot.to_dict()
         balance = data.get('balance', 0)
         businesses = data.get('businesses', {})
         
         if balance < cost:
-            return False, "Niewystarczające środki"
+            return False, "Insufficient funds"
             
-        # Przygotuj aktualizacje
-        updates = {}
-        
-        # Jeśli to pierwszy biznes, ustaw czas startu
+        # Inicjalizacja czasu przy pierwszym biznesie
         if not businesses:
-            updates['last_launder'] = int(time.time())
+            transaction.set(ref, {'last_launder': int(time.time())}, merge=True)
             
-        # Dodaj biznes
+        # Zwiększ ilość
         current_qty = businesses.get(business_id, 0)
         businesses[business_id] = current_qty + 1
         
-        updates['businesses'] = businesses
-        updates['balance'] = balance - cost
-        
-        transaction.set(ref, updates, merge=True)
-        return True, "Sukces"
+        transaction.update(ref, {
+            'balance': balance - cost,
+            'businesses': businesses
+        })
+        return True, "Success"
 
     transaction = db.transaction()
     return tx_buy_biz(transaction, user_ref)
@@ -302,20 +315,16 @@ def launder_money_db(user_id, rates):
         if not businesses:
             return 0, 0
             
-        # Oblicz zarobek
+        # Oblicz czas i zarobek
         now = int(time.time())
         seconds_passed = now - last_launder
+        if seconds_passed > 86400: seconds_passed = 86400 # Max 24h
         
-        # Limit czasu (np. max 24h akumulacji)
-        if seconds_passed > 86400: seconds_passed = 86400
-        
-        # Sumuj dochód godzinowy
         total_hourly_income = 0
         for biz_id, qty in businesses.items():
             if biz_id in rates:
                 total_hourly_income += rates[biz_id] * qty
                 
-        # Przelicz na sekundy
         earned = int((total_hourly_income / 3600) * seconds_passed)
         
         if earned > 0:
@@ -336,30 +345,22 @@ def launder_money_db(user_id, rates):
 def set_marriage(user1_id, user2_id):
     """Ustawia partnerów dla obu użytkowników."""
     now = int(time.time())
-    # Zapisz u użytkownika 1
     db.collection('users').document(str(user1_id)).update({
-        'partner_id': str(user2_id),
-        'marriage_date': now
+        'partner_id': str(user2_id), 'marriage_date': now
     })
-    # Zapisz u użytkownika 2
     db.collection('users').document(str(user2_id)).set({
-        'partner_id': str(user1_id),
-        'marriage_date': now
+        'partner_id': str(user1_id), 'marriage_date': now
     }, merge=True)
 
 def get_partner(user_id):
-    """Zwraca ID partnera lub None."""
     doc = db.collection('users').document(str(user_id)).get()
     return doc.to_dict().get('partner_id') if doc.exists else None
 
 def divorce_users(user1_id, user2_id):
-    """Usuwa małżeństwo."""
     db.collection('users').document(str(user1_id)).update({'partner_id': firestore.DELETE_FIELD})
     db.collection('users').document(str(user2_id)).update({'partner_id': firestore.DELETE_FIELD})
 
 def get_full_profile(user_id):
-    """Pobiera wszystkie dane użytkownika do komendy /profile."""
+    """Pobiera wszystkie dane użytkownika do profilu."""
     doc = db.collection('users').document(str(user_id)).get()
-    if not doc.exists:
-        return {}
-    return doc.to_dict()
+    return doc.to_dict() if doc.exists else {}
