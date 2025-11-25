@@ -24,9 +24,9 @@ def cmd_help(data):
                             "value": "`poker` - Video Poker\n`blackjack` - Classic 21\n`roulette` - Casino Roulette\n`slots` - Slot Machine\n`coinflip` - Heads or Tails\n`duel` - Challenge a player",
                             "inline": False
                         },
-                        {
-                            "name": "🎉 Fun Module",
-                            "value": "`/ask` - Chat with AI 🧠\n`/poker` `/blackjack` `/roulette`\n`/coinflip` `/slots` `/cat`",
+                    {
+                            "name": "🎉 Fun & Social",
+                            "value": "`profile` - Check stats\n`trivia` - Quiz for cash\n`rps` - Rock Paper Scissors\n`marry` `divorce` `ship` `avatar`",
                             "inline": False
                         },
                         {

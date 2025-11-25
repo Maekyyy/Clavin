@@ -22,26 +22,20 @@ from commands.fun.coinflip import COINFLIP_DATA, cmd_coinflip
 from commands.fun.slots import SLOTS_DATA, cmd_slots
 from commands.fun.roulette import ROULETTE_DATA, cmd_roulette
 
-# Games/Features with Buttons (Components)
+# Games with Buttons (Components)
 from commands.fun.poker import POKER_DATA, cmd_poker, handle_poker_component
 from commands.fun.blackjack import BLACKJACK_DATA, cmd_blackjack, handle_blackjack_component
 from commands.fun.duel import DUEL_DATA, cmd_duel, handle_duel_component
-from commands.fun.poll import POLL_DATA, cmd_poll, handle_poll_component
 
 # --- ECONOMY & RPG ---
 from commands.economy.money import BALANCE_DATA, cmd_balance, DAILY_DATA, cmd_daily
 from commands.economy.pay import PAY_DATA, cmd_pay
 from commands.economy.richlist import RICHLIST_DATA, cmd_richlist
 from commands.economy.work import WORK_DATA, cmd_work
-from commands.economy.rob import ROB_DATA, cmd_rob
-from commands.economy.crypto import CRYPTO_DATA, cmd_crypto
-
-# Enhanced Shop (Select Menu)
 from commands.economy.shop import SHOP_DATA, cmd_shop, handle_shop_component
-
-# GTA System
-from commands.economy.gta import CRIME_DATA, BUSINESS_DATA, BUY_BIZ_DATA, LAUNDER_DATA
-from commands.economy.gta import cmd_crime, cmd_businesses, cmd_buy_business, cmd_launder
+from commands.economy.rob import ROB_DATA, cmd_rob
+from commands.economy.titles import BUY_TITLE_DATA, cmd_buy_title
+from commands.economy.crypto import CRYPTO_DATA, cmd_crypto
 
 # --- LEVELS ---
 from commands.levels.rank import RANK_DATA, cmd_rank, LEADERBOARD_XP_DATA, cmd_leaderboard_xp
@@ -54,6 +48,9 @@ from commands.admin.moderation import CLEAR_DATA, cmd_clear, KICK_DATA, cmd_kick
 
 # --- DATABASE (XP SYSTEM) ---
 from database import add_xp
+
+# --- POLLS ---
+from commands.fun.poll import POLL_DATA, cmd_poll, handle_poll_component
 
 app = Flask(__name__)
 
@@ -75,10 +72,9 @@ ALL_COMMANDS = [
     COINFLIP_DATA, SLOTS_DATA, ROULETTE_DATA,
     POKER_DATA, BLACKJACK_DATA, DUEL_DATA, POLL_DATA,
     
-    # Economy & GTA
+    # Economy
     BALANCE_DATA, DAILY_DATA, PAY_DATA, RICHLIST_DATA,
-    WORK_DATA, ROB_DATA, SHOP_DATA, CRYPTO_DATA,
-    CRIME_DATA, BUSINESS_DATA, BUY_BIZ_DATA, LAUNDER_DATA,
+    WORK_DATA, SHOP_DATA, ROB_DATA, BUY_TITLE_DATA, CRYPTO_DATA,
     
     # Levels
     RANK_DATA, LEADERBOARD_XP_DATA,
@@ -102,11 +98,7 @@ COMMAND_HANDLERS = {
     
     # Economy
     "balance": cmd_balance, "daily": cmd_daily, "pay": cmd_pay, "richlist": cmd_richlist,
-    "work": cmd_work, "shop": cmd_shop, "rob": cmd_rob, "crypto": cmd_crypto,
-    
-    # GTA
-    "crime": cmd_crime, "businesses": cmd_businesses, 
-    "buy_business": cmd_buy_business, "launder": cmd_launder,
+    "work": cmd_work, "shop": cmd_shop, "rob": cmd_rob, "buy_title": cmd_buy_title, "crypto": cmd_crypto,
     
     # Levels
     "rank": cmd_rank, "leaderboard": cmd_leaderboard_xp,
@@ -158,9 +150,11 @@ def interactions():
         if "guild_id" in r: r["data"]["guild_id"] = r["guild_id"]
         if "member" in r: r["data"]["member"] = r["member"]
         
-        # Pass tokens for AI/Moderation
+        # Pass token and app_id (Critical for AI / deferred responses)
         r["data"]["token"] = r.get("token")
         r["data"]["application_id"] = r.get("application_id")
+        
+        # Pass channel_id (Critical for moderation)
         if "channel_id" in r: r["data"]["channel_id"] = r["channel_id"]
         
         # Pass resolved data (Critical for Avatar/User info)
@@ -170,9 +164,10 @@ def interactions():
         if name in COMMAND_HANDLERS:
             response = COMMAND_HANDLERS[name](r["data"])
             
-            # Append Level Up message if applicable
+            # Append Level Up message if applicable (only for standard responses)
             if leveled_up and isinstance(response, dict) and "data" in response:
                 msg = response["data"].get("content", "")
+                # Create content if empty, or add new line
                 prefix = "\n\n" if msg else ""
                 response["data"]["content"] = f"{msg}{prefix}⭐ **LEVEL UP!** You reached **Level {new_lvl}**!"
             
@@ -195,10 +190,15 @@ def interactions():
             response = handle_duel_component(r)
         elif custom_id.startswith("poll_"):
             response = handle_poll_component(r)
-            
-        # Shop Handler (Select Menu)
+        
+        # Shop Handler
         elif custom_id == "shop_buy_select":
             response = handle_shop_component(r)
+            
+        # Trivia / Marry handlers (if you added them, make sure to import and add here)
+        # Example:
+        # elif custom_id.startswith("trivia_"): response = handle_trivia_component(r)
+        # elif custom_id.startswith("marry_"): response = handle_marry_component(r)
             
         if response:
             return jsonify(response)

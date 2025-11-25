@@ -326,3 +326,38 @@ def launder_money_db(user_id, rates):
 
     transaction = db.transaction()
     return tx_launder(transaction, user_ref)
+
+# ==========================================
+#           SOCIAL (MARRIAGE)
+# ==========================================
+
+def set_marriage(user1_id, user2_id):
+    """Ustawia partnerów dla obu użytkowników."""
+    now = int(time.time())
+    # Zapisz u użytkownika 1
+    db.collection('users').document(str(user1_id)).update({
+        'partner_id': str(user2_id),
+        'marriage_date': now
+    })
+    # Zapisz u użytkownika 2 (jeśli dokument nie istnieje, set z merge=True go stworzy)
+    db.collection('users').document(str(user2_id)).set({
+        'partner_id': str(user1_id),
+        'marriage_date': now
+    }, merge=True)
+
+def get_partner(user_id):
+    """Zwraca ID partnera lub None."""
+    doc = db.collection('users').document(str(user_id)).get()
+    return doc.to_dict().get('partner_id') if doc.exists else None
+
+def divorce_users(user1_id, user2_id):
+    """Usuwa małżeństwo."""
+    db.collection('users').document(str(user1_id)).update({'partner_id': firestore.DELETE_FIELD})
+    db.collection('users').document(str(user2_id)).update({'partner_id': firestore.DELETE_FIELD})
+
+def get_full_profile(user_id):
+    """Pobiera wszystkie dane użytkownika do komendy /profile."""
+    doc = db.collection('users').document(str(user_id)).get()
+    if not doc.exists:
+        return {}
+    return doc.to_dict()
