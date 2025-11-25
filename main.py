@@ -15,11 +15,13 @@ from commands.fun.cat import CAT_DATA, cmd_cat
 from commands.fun.eightball import EIGHTBALL_DATA, cmd_eightball
 from commands.fun.ship import SHIP_DATA, cmd_ship
 from commands.fun.avatar import AVATAR_DATA, cmd_avatar
-from commands.fun.poll import POLL_DATA, cmd_poll, handle_poll_component
+from commands.fun.ai import AI_DATA, cmd_ask  # AI Module
+
 # Games with Logic
 from commands.fun.coinflip import COINFLIP_DATA, cmd_coinflip
 from commands.fun.slots import SLOTS_DATA, cmd_slots
 from commands.fun.roulette import ROULETTE_DATA, cmd_roulette
+
 # Games with Buttons (Components)
 from commands.fun.poker import POKER_DATA, cmd_poker, handle_poker_component
 from commands.fun.blackjack import BLACKJACK_DATA, cmd_blackjack, handle_blackjack_component
@@ -42,6 +44,7 @@ from commands.levels.rank import RANK_DATA, cmd_rank, LEADERBOARD_XP_DATA, cmd_l
 from commands.root.synctest import SYNCTEST_DATA, cmd_synctest
 from commands.admin.server import SERVER_DATA, cmd_server_info
 from commands.admin.help import HELP_DATA, cmd_help
+from commands.admin.moderation import CLEAR_DATA, cmd_clear, KICK_DATA, cmd_kick, BAN_DATA, cmd_ban
 
 # --- DATABASE (XP SYSTEM) ---
 from database import add_xp
@@ -59,17 +62,23 @@ APP_ID = os.environ.get("DISCORD_APP_ID")
 #           COMMAND REGISTRY
 # ==========================================
 ALL_COMMANDS = [
-    # Fun
-    HELLO_DATA, CAT_DATA, EIGHTBALL_DATA, SHIP_DATA, AVATAR_DATA,
+    # Fun & AI
+    HELLO_DATA, CAT_DATA, EIGHTBALL_DATA, SHIP_DATA, AVATAR_DATA, AI_DATA,
+    
+    # Games
     COINFLIP_DATA, SLOTS_DATA, ROULETTE_DATA,
-    POKER_DATA, BLACKJACK_DATA, DUEL_DATA, POLL_DATA,
+    POKER_DATA, BLACKJACK_DATA, DUEL_DATA,
+    
     # Economy
     BALANCE_DATA, DAILY_DATA, PAY_DATA, RICHLIST_DATA,
     WORK_DATA, SHOP_DATA, ROB_DATA, BUY_TITLE_DATA, CRYPTO_DATA,
+    
     # Levels
     RANK_DATA, LEADERBOARD_XP_DATA,
-    # System
-    SYNCTEST_DATA, SERVER_DATA, HELP_DATA
+    
+    # System & Admin
+    SYNCTEST_DATA, SERVER_DATA, HELP_DATA,
+    CLEAR_DATA, KICK_DATA, BAN_DATA
 ]
 
 # ==========================================
@@ -78,16 +87,22 @@ ALL_COMMANDS = [
 COMMAND_HANDLERS = {
     # Fun
     "hello": cmd_hello, "cat": cmd_cat, "8ball": cmd_eightball,
-    "ship": cmd_ship, "avatar": cmd_avatar,
+    "ship": cmd_ship, "avatar": cmd_avatar, "ask": cmd_ask,
+    
+    # Games
     "coinflip": cmd_coinflip, "slots": cmd_slots, "roulette": cmd_roulette,
-    "poker": cmd_poker, "blackjack": cmd_blackjack, "duel": cmd_duel, "poll": cmd_poll,
+    "poker": cmd_poker, "blackjack": cmd_blackjack, "duel": cmd_duel,
+    
     # Economy
     "balance": cmd_balance, "daily": cmd_daily, "pay": cmd_pay, "richlist": cmd_richlist,
     "work": cmd_work, "shop": cmd_shop, "rob": cmd_rob, "buy_title": cmd_buy_title, "crypto": cmd_crypto,
+    
     # Levels
     "rank": cmd_rank, "leaderboard": cmd_leaderboard_xp,
-    # System
-    "synctest": cmd_synctest, "serverinfo": cmd_server_info, "help": cmd_help
+    
+    # System & Admin
+    "synctest": cmd_synctest, "serverinfo": cmd_server_info, "help": cmd_help,
+    "clear": cmd_clear, "kick": cmd_kick, "ban": cmd_ban
 }
 
 # ==========================================
@@ -131,13 +146,22 @@ def interactions():
         # Pass extra context
         if "guild_id" in r: r["data"]["guild_id"] = r["guild_id"]
         if "member" in r: r["data"]["member"] = r["member"]
+        
+        # Pass token and app_id (Critical for AI / deferred responses)
+        r["data"]["token"] = r["token"]
+        r["data"]["application_id"] = r["application_id"]
+        
+        # Pass channel_id (Critical for moderation)
+        if "channel_id" in r: r["data"]["channel_id"] = r["channel_id"]
+        
+        # Pass resolved data (Critical for Avatar/User info)
         if "data" in r and "resolved" in r["data"]:
              r["data"]["resolved"] = r["data"]["resolved"]
 
         if name in COMMAND_HANDLERS:
             response = COMMAND_HANDLERS[name](r["data"])
             
-            # Append Level Up message if applicable
+            # Append Level Up message if applicable (only for standard responses)
             if leveled_up and isinstance(response, dict) and "data" in response:
                 msg = response["data"].get("content", "")
                 # Create content if empty, or add new line
@@ -160,12 +184,8 @@ def interactions():
             response = handle_blackjack_component(r)
         elif custom_id.startswith("duel_"):
             response = handle_duel_component(r)
-        elif custom_id.startswith("poll_"):
-            response = handle_poll_component(r)
             
         if response:
-            # (Optional) We could add level up message here too, 
-            # but usually we keep it for commands to avoid spam during gameplay.
             return jsonify(response)
 
     return jsonify({"error": "unknown interaction"}), 400

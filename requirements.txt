@@ -3,3 +3,4 @@ pynacl
 requests
 gunicorn
 google-cloud-firestore
+google-generativeai
