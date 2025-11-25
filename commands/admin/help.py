@@ -15,8 +15,8 @@ def cmd_help(data):
                     "color": 0x3498db,
                     "fields": [
                         {
-                            "name": "💰 Economy & RPG",
-                            "value": "`balance` `daily` `pay` `richlist`\n`work` `shop` `rob`\n`buy_title` `crypto`",
+                            "name": "💰 Economy & GTA",
+                            "value": "`/balance` `/daily` `/pay` `/richlist`\n`/crime` - High risk cash\n`/businesses` - Manage empire\n`/buy_business` - Buy factory\n`/launder` - Collect income\n`/shop` - Items & Titles",
                             "inline": False
                         },
                         {

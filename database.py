@@ -238,3 +238,91 @@ def add_vote(poll_id, user_id, option_index):
 
     transaction = db.transaction()
     return tx_vote(transaction, poll_ref)
+
+# ==========================================
+#           GTA SYSTEM (Businesses)
+# ==========================================
+
+def get_businesses(user_id):
+    """Pobiera listę posiadanych biznesów."""
+    doc = db.collection('users').document(str(user_id)).get()
+    # Zwraca słownik: {'weed_farm': 1, 'meth_lab': 0}
+    return doc.to_dict().get('businesses', {}) if doc.exists else {}
+
+def buy_business_db(user_id, business_id, cost):
+    """Kupuje biznes i aktualizuje stan konta."""
+    user_ref = db.collection('users').document(str(user_id))
+    
+    @firestore.transactional
+    def tx_buy_biz(transaction, ref):
+        snapshot = ref.get(transaction=transaction)
+        if not snapshot.exists: return False, "No account"
+        
+        data = snapshot.to_dict()
+        balance = data.get('balance', 0)
+        businesses = data.get('businesses', {})
+        
+        if balance < cost:
+            return False, "Not enough cash"
+            
+        # Jeśli to pierwszy biznes, ustawiamy czas startu dochodu
+        if not businesses:
+            transaction.set(ref, {'last_launder': int(time.time())}, merge=True)
+            
+        # Dodajemy biznes (lub zwiększamy ilość, jeśli chcesz pozwalać na wiele)
+        # Tutaj zakładamy 1 typ = 1 sztuka dla uproszczenia, lub zliczamy
+        current_qty = businesses.get(business_id, 0)
+        businesses[business_id] = current_qty + 1
+        
+        transaction.update(ref, {
+            'balance': balance - cost,
+            'businesses': businesses
+        })
+        return True, "Success"
+
+    transaction = db.transaction()
+    return tx_buy_biz(transaction, user_ref)
+
+def launder_money_db(user_id, rates):
+    """Oblicza i wypłaca zarobione pieniądze."""
+    user_ref = db.collection('users').document(str(user_id))
+    
+    @firestore.transactional
+    def tx_launder(transaction, ref):
+        snapshot = ref.get(transaction=transaction)
+        if not snapshot.exists: return 0, 0
+        
+        data = snapshot.to_dict()
+        businesses = data.get('businesses', {})
+        last_launder = data.get('last_launder', int(time.time()))
+        current_balance = data.get('balance', 0)
+        
+        if not businesses:
+            return 0, 0
+            
+        # Obliczamy zarobek
+        now = int(time.time())
+        seconds_passed = now - last_launder
+        
+        # Limit czasu (np. max 24h akumulacji, żeby zmuszać do logowania)
+        if seconds_passed > 86400: seconds_passed = 86400
+        
+        # Sumujemy dochód na godzinę (rates to słownik id -> $/h)
+        total_hourly_income = 0
+        for biz_id, qty in businesses.items():
+            if biz_id in rates:
+                total_hourly_income += rates[biz_id] * qty
+                
+        # Przeliczamy na sekundy
+        earned = int((total_hourly_income / 3600) * seconds_passed)
+        
+        if earned > 0:
+            transaction.update(ref, {
+                'balance': current_balance + earned,
+                'last_launder': now
+            })
+            
+        return earned, total_hourly_income
+
+    transaction = db.transaction()
+    return tx_launder(transaction, user_ref)
