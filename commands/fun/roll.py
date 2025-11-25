@@ -1,68 +1,58 @@
-import requests
+import random
 
-MEME_DATA = {
-    "name": "meme",
-    "description": "Generate a meme",
+ROLL_DATA = {
+    "name": "roll",
+    "description": "Roll dice (e.g. 1d20, 2d6)",
     "type": 1,
-    "options": [
-        {
-            "name": "template",
-            "description": "Meme template",
-            "type": 3,
-            "required": True,
-            "choices": [
-                {"name": "Doge", "value": "doge"},
-                {"name": "Drake Hotline Bling", "value": "drake"},
-                {"name": "Distracted Boyfriend", "value": "distracted"},
-                {"name": "Two Buttons", "value": "two-buttons"},
-                {"name": "Woman Yelling At Cat", "value": "woman-yelling"},
-                {"name": "Change My Mind", "value": "change-my-mind"},
-                {"name": "Batman Slapping Robin", "value": "batman"},
-                {"name": "Mocking Spongebob", "value": "mocking-spongebob"}
-            ]
-        },
-        {
-            "name": "top_text",
-            "description": "Text on top",
-            "type": 3,
-            "required": True
-        },
-        {
-            "name": "bottom_text",
-            "description": "Text on bottom",
-            "type": 3,
-            "required": False
-        }
-    ]
+    "options": [{
+        "name": "dice",
+        "description": "Format: XdY (e.g. 1d20, 2d6, 1d100)",
+        "type": 3,
+        "required": False
+    }]
 }
 
-def cmd_meme(data):
+def cmd_roll(data):
     options = data.get("options", [])
-    template = options[0]["value"]
-    top = options[1]["value"]
-    bottom = ""
+    dice_str = "1d20" # Domyślnie rzut kością 20-ścienną
     
-    if len(options) > 2:
-        bottom = options[2]["value"]
+    if options:
+        dice_str = options[0]["value"]
+        
+    try:
+        # Parsowanie (np. "2d6" -> 2 rzuty, kość 6)
+        if "d" not in dice_str:
+            return {"type": 4, "data": {"content": "❌ Invalid format. Use `XdY` (e.g. `2d6`)."}}
+            
+        parts = dice_str.lower().split("d")
+        count = int(parts[0]) if parts[0] else 1
+        sides = int(parts[1])
+        
+        # Limity (żeby nie zawiesić bota)
+        if count > 100 or sides > 1000000 or count < 1 or sides < 1:
+             return {"type": 4, "data": {"content": "❌ Numbers too big/small! Max 100 dice."}}
 
-    # Formatowanie URL (zamiana spacji na _, specjalnych znaków itp.)
-    def clean(text):
-        return text.strip().replace("_", "__").replace("-", "--").replace(" ", "_").replace("?", "~q").replace("%", "~p").replace("#", "~h").replace("/", "~s")
+        rolls = [random.randint(1, sides) for _ in range(count)]
+        total = sum(rolls)
+        
+        # Formatowanie wyniku
+        if count == 1:
+            desc = f"🎲 Result: **{total}**"
+        else:
+            rolls_str = ", ".join(map(str, rolls))
+            if len(rolls_str) > 100: rolls_str = "..." # Ucinamy jak za długie
+            desc = f"🎲 Results: [{rolls_str}]\n**Total: {total}**"
 
-    safe_top = clean(top)
-    safe_bottom = clean(bottom) if bottom else "_"
-    
-    # API Memegen
-    image_url = f"https://api.memegen.link/images/{template}/{safe_top}/{safe_bottom}.png"
-
-    return {
-        "type": 4,
-        "data": {
-            "embeds": [{
-                "title": "🤣 Meme Generator",
-                "image": {"url": image_url},
-                "color": 0xf1c40f,
-                "footer": {"text": f"Template: {template}"}
-            }]
+        return {
+            "type": 4,
+            "data": {
+                "embeds": [{
+                    "title": f"Rolling {dice_str}",
+                    "description": desc,
+                    "color": 0x9b59b6
+                }]
+            }
         }
-    }
+        
+    except ValueError:
+        return {"type": 4, "data": {"content": "❌ Invalid number format. Use `XdY`."}}

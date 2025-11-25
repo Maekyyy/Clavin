@@ -12,32 +12,38 @@ def cmd_help(data):
                 {
                     "title": "📜 Clavin Bot Command List",
                     "description": "Here is a list of all available bot functions:",
-                    "color": 0x3498db,
+                    "color": 0x3498db,  # Blue
                     "fields": [
                         {
-                            "name": "💰 Economy & GTA",
-                            "value": "`/balance` `/daily` `/pay` `/richlist`\n`/crime` - High risk cash\n`/businesses` - Manage empire\n`/buy_business` - Buy factory\n`/launder` - Collect income\n`/shop` - Items & Titles",
+                            "name": "💰 Economy & RPG",
+                            "value": "`/balance` `/daily` `/pay` `/richlist`\n`/work` `/shop` `/rob` `/buy_title` `/crypto`",
                             "inline": False
                         },
                         {
                             "name": "🎰 Casino & Games",
-                            "value": "`poker` - Video Poker\n`blackjack` - Classic 21\n`roulette` - Casino Roulette\n`slots` - Slot Machine\n`coinflip` - Heads or Tails\n`duel` - Challenge a player",
+                            "value": "`/poker` `/blackjack` `/roulette`\n`/slots` `/coinflip` `/duel`",
                             "inline": False
                         },
                         {
                             "name": "🎉 Fun & Social",
-                            # Dodano meme i roll
-                            "value": "`/meme` - Generate memes\n`/roll` - Roll dice (RPG)\n`/profile` `trivia` `rps` `ship` `cat`",
+                            # Dodano tutaj roll i meme:
+                            "value": "`/meme` - Generator memów\n`/roll` - Rzut kośćmi (RPG)\n`/ship` `/avatar` `/cat` `/8ball` `/hello`",
                             "inline": False
                         },
                         {
                             "name": "📈 Levels",
-                            "value": "`rank` - Check Level\n`leaderboard` - XP Ranking",
+                            "value": "`/rank` - Check Level\n`/leaderboard` - XP Ranking",
                             "inline": False
                         },
                         {
-                            "name": "🛡️ Admin & Moderation",
-                            "value": "`/serverinfo` - Server stats\n`/clear` - Delete messages\n`/kick` - Kick user\n`/ban` - Ban user\n`/help` - Show commands",
+                            "name": "⚙️ Utility & System",
+                            # Dodano ask (AI) i poll
+                            "value": "`/ask` - Chat with AI\n`/poll` - Create poll\n`/serverinfo` `/synctest` `/help`",
+                            "inline": False
+                        },
+                        {
+                            "name": "🛡️ Admin",
+                            "value": "`/clear` `/kick` `/ban`",
                             "inline": False
                         }
                     ],
