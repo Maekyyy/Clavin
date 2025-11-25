@@ -88,7 +88,7 @@ ALL_COMMANDS = [
     
     # Economy & GTA
     BALANCE_DATA, DAILY_DATA, PAY_DATA, RICHLIST_DATA,
-    WORK_DATA, SHOP_DATA, ROB_DATA, BUY_TITLE_DATA, CRYPTO_DATA,
+    WORK_DATA, SHOP_DATA, ROB_DATA, CRYPTO_DATA,
     CRIME_DATA, BUSINESS_DATA, BUY_BIZ_DATA, LAUNDER_DATA,
     
     # Levels
@@ -120,7 +120,7 @@ COMMAND_HANDLERS = {
     
     # Economy & GTA
     "balance": cmd_balance, "daily": cmd_daily, "pay": cmd_pay, "richlist": cmd_richlist,
-    "work": cmd_work, "shop": cmd_shop, "rob": cmd_rob, "buy_title": cmd_buy_title, "crypto": cmd_crypto,
+    "work": cmd_work, "shop": cmd_shop, "rob": cmd_rob, "crypto": cmd_crypto,
     "crime": cmd_crime, "businesses": cmd_businesses, "buy_business": cmd_buy_business, "launder": cmd_launder,
     
     # Levels
