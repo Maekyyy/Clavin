@@ -3,22 +3,22 @@ import time
 import random
 from google.cloud import firestore
 
-# Initialize Firestore Client
-# Google Cloud automatically detects credentials from the environment
+# Inicjalizacja klienta Firestore
+# Google Cloud automatycznie wykrywa dane logowania ze środowiska
 db = firestore.Client()
 
 # ==========================================
-#              ECONOMY SYSTEM
+#              SYSTEM EKONOMII
 # ==========================================
 
 def get_balance(user_id):
-    """Retrieves user's wallet balance."""
+    """Pobiera stan konta użytkownika."""
     user_ref = db.collection('users').document(str(user_id))
     doc = user_ref.get()
     return doc.to_dict().get('balance', 0) if doc.exists else 0
 
 def update_balance(user_id, amount):
-    """Safely adds or removes money using transactions."""
+    """Bezpiecznie dodaje lub odejmuje pieniądze używając transakcji."""
     user_ref = db.collection('users').document(str(user_id))
     
     @firestore.transactional
@@ -35,46 +35,46 @@ def update_balance(user_id, amount):
     return update_in_transaction(transaction, user_ref)
 
 def claim_daily(user_id):
-    """Adds 1000 chips to user balance."""
+    """Dodaje 1000 żetonów do konta użytkownika."""
     return update_balance(user_id, 1000)
 
 def transfer_money(sender_id, receiver_id, amount):
-    """Transfers money between two users atomically."""
+    """Atomowy przelew pieniędzy między dwoma użytkownikami."""
     sender_ref = db.collection('users').document(str(sender_id))
     receiver_ref = db.collection('users').document(str(receiver_id))
 
     @firestore.transactional
     def tx_transfer(transaction, send_ref, recv_ref):
-        # Check Sender
+        # Sprawdź nadawcę
         sender_snap = send_ref.get(transaction=transaction)
-        if not sender_snap.exists: return False, "Account not found."
+        if not sender_snap.exists: return False, "Konto nie istnieje."
         
         sender_bal = sender_snap.to_dict().get('balance', 0)
-        if sender_bal < amount: return False, "Insufficient funds."
+        if sender_bal < amount: return False, "Niewystarczające środki."
 
-        # Check Receiver (create if not exists)
+        # Sprawdź odbiorcę (utwórz jeśli nie istnieje)
         recv_snap = recv_ref.get(transaction=transaction)
         recv_bal = recv_snap.to_dict().get('balance', 0) if recv_snap.exists else 0
 
-        # Execute Transfer
+        # Wykonaj przelew
         transaction.set(send_ref, {'balance': sender_bal - amount}, merge=True)
         transaction.set(recv_ref, {'balance': recv_bal + amount}, merge=True)
-        return True, "Success"
+        return True, "Sukces"
 
     transaction = db.transaction()
     return tx_transfer(transaction, sender_ref, receiver_ref)
 
 def get_leaderboard(limit=10):
-    """Returns the top richest users."""
+    """Zwraca listę najbogatszych użytkowników."""
     users_ref = db.collection('users')
     return users_ref.order_by('balance', direction=firestore.Query.DESCENDING).limit(limit).stream()
 
 # ==========================================
-#           COOLDOWNS & UTILS
+#           COOLDOWNY I NARZĘDZIA
 # ==========================================
 
 def check_cooldown(user_id, command_name, cooldown_seconds):
-    """Checks if a command is on cooldown. Returns (allowed, time_left)."""
+    """Sprawdza czy komenda jest na cooldownie. Zwraca (dozwolone, czas_do_końca)."""
     user_ref = db.collection('users').document(str(user_id))
     doc = user_ref.get()
     now = int(time.time())
@@ -89,7 +89,7 @@ def check_cooldown(user_id, command_name, cooldown_seconds):
     return True, 0
 
 # ==========================================
-#        INVENTORY & TITLES (RPG)
+#        EKWIPUNEK I TYTUŁY (RPG)
 # ==========================================
 
 def get_inventory(user_id):
@@ -113,7 +113,7 @@ def get_title(user_id):
     return doc.to_dict().get('title', "") if doc.exists else ""
 
 # ==========================================
-#           GAME STATE (Poker, etc.)
+#           STAN GIER (Poker, itp.)
 # ==========================================
 
 def set_game_state(user_id, game_data):
@@ -127,11 +127,11 @@ def delete_game_state(user_id):
     db.collection('games').document(str(user_id)).delete()
 
 # ==========================================
-#           CRYPTO MARKET
+#           RYNEK KRYPTOWALUT
 # ==========================================
 
 def get_crypto_price():
-    """Gets current price. Simulates fluctuation if data is old."""
+    """Pobiera aktualną cenę. Symuluje wahania jeśli dane są stare."""
     market_ref = db.collection('system').document('market')
     doc = market_ref.get()
     now = int(time.time())
@@ -140,9 +140,9 @@ def get_crypto_price():
     price = data.get('price', 100)
     last_update = data.get('last_update', 0)
     
-    # Update price every 10 minutes (600 seconds)
+    # Aktualizuj cenę co 10 minut (600 sekund)
     if now - last_update > 600:
-        change_percent = random.uniform(-0.1, 0.15) # -10% to +15%
+        change_percent = random.uniform(-0.1, 0.15) # -10% do +15%
         price = max(1, int(price * (1 + change_percent)))
         market_ref.set({'price': price, 'last_update': now})
         
@@ -157,11 +157,11 @@ def update_crypto(user_id, amount):
     user_ref.update({"crypto": firestore.Increment(amount)})
 
 # ==========================================
-#           LEVELING SYSTEM (XP)
+#           SYSTEM POZIOMÓW (XP)
 # ==========================================
 
 def add_xp(user_id, amount=10):
-    """Adds XP and checks for level up. Returns (new_level, leveled_up_bool)."""
+    """Dodaje XP i sprawdza czy nastąpił awans. Zwraca (nowy_poziom, czy_awansował)."""
     user_ref = db.collection('users').document(str(user_id))
     
     @firestore.transactional
@@ -201,7 +201,7 @@ def get_xp_leaderboard(limit=10):
     return db.collection('users').order_by('level', direction=firestore.Query.DESCENDING).limit(limit).stream()
 
 # ==========================================
-#              POLL SYSTEM
+#              SYSTEM ANKIET
 # ==========================================
 
 def create_poll(poll_id, question, options):
@@ -240,7 +240,7 @@ def add_vote(poll_id, user_id, option_index):
     return tx_vote(transaction, poll_ref)
 
 # ==========================================
-#           GTA SYSTEM (Businesses)
+#           SYSTEM GTA (Biznesy)
 # ==========================================
 
 def get_businesses(user_id):
@@ -256,29 +256,31 @@ def buy_business_db(user_id, business_id, cost):
     @firestore.transactional
     def tx_buy_biz(transaction, ref):
         snapshot = ref.get(transaction=transaction)
-        if not snapshot.exists: return False, "No account"
+        if not snapshot.exists: return False, "Brak konta"
         
         data = snapshot.to_dict()
         balance = data.get('balance', 0)
         businesses = data.get('businesses', {})
         
         if balance < cost:
-            return False, "Not enough cash"
+            return False, "Niewystarczające środki"
             
-        # Jeśli to pierwszy biznes, ustawiamy czas startu dochodu
+        # Przygotuj aktualizacje
+        updates = {}
+        
+        # Jeśli to pierwszy biznes, ustaw czas startu
         if not businesses:
-            transaction.set(ref, {'last_launder': int(time.time())}, merge=True)
+            updates['last_launder'] = int(time.time())
             
-        # Dodajemy biznes (lub zwiększamy ilość, jeśli chcesz pozwalać na wiele)
-        # Tutaj zakładamy 1 typ = 1 sztuka dla uproszczenia, lub zliczamy
+        # Dodaj biznes
         current_qty = businesses.get(business_id, 0)
         businesses[business_id] = current_qty + 1
         
-        transaction.update(ref, {
-            'balance': balance - cost,
-            'businesses': businesses
-        })
-        return True, "Success"
+        updates['businesses'] = businesses
+        updates['balance'] = balance - cost
+        
+        transaction.set(ref, updates, merge=True)
+        return True, "Sukces"
 
     transaction = db.transaction()
     return tx_buy_biz(transaction, user_ref)
@@ -300,20 +302,20 @@ def launder_money_db(user_id, rates):
         if not businesses:
             return 0, 0
             
-        # Obliczamy zarobek
+        # Oblicz zarobek
         now = int(time.time())
         seconds_passed = now - last_launder
         
-        # Limit czasu (np. max 24h akumulacji, żeby zmuszać do logowania)
+        # Limit czasu (np. max 24h akumulacji)
         if seconds_passed > 86400: seconds_passed = 86400
         
-        # Sumujemy dochód na godzinę (rates to słownik id -> $/h)
+        # Sumuj dochód godzinowy
         total_hourly_income = 0
         for biz_id, qty in businesses.items():
             if biz_id in rates:
                 total_hourly_income += rates[biz_id] * qty
                 
-        # Przeliczamy na sekundy
+        # Przelicz na sekundy
         earned = int((total_hourly_income / 3600) * seconds_passed)
         
         if earned > 0:
@@ -328,7 +330,7 @@ def launder_money_db(user_id, rates):
     return tx_launder(transaction, user_ref)
 
 # ==========================================
-#           SOCIAL (MARRIAGE)
+#           SPOŁECZNOŚĆ (Małżeństwa)
 # ==========================================
 
 def set_marriage(user1_id, user2_id):
@@ -339,7 +341,7 @@ def set_marriage(user1_id, user2_id):
         'partner_id': str(user2_id),
         'marriage_date': now
     })
-    # Zapisz u użytkownika 2 (jeśli dokument nie istnieje, set z merge=True go stworzy)
+    # Zapisz u użytkownika 2
     db.collection('users').document(str(user2_id)).set({
         'partner_id': str(user1_id),
         'marriage_date': now

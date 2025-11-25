@@ -23,6 +23,7 @@ from commands.social.marry import MARRY_DATA, DIVORCE_DATA, cmd_marry, cmd_divor
 # --- UTILITY (Nowy folder utility) ---
 from commands.utility.ai import AI_DATA, cmd_ask
 from commands.utility.poll import POLL_DATA, cmd_poll, handle_poll_component
+from commands.utility.reset import RESET_DATA, cmd_reset
 
 # --- GAMES (Nowy folder games) ---
 from commands.games.coinflip import COINFLIP_DATA, cmd_coinflip
@@ -77,7 +78,7 @@ ALL_COMMANDS = [
     PROFILE_DATA, AVATAR_DATA, SHIP_DATA, MARRY_DATA, DIVORCE_DATA,
     
     # Utility
-    AI_DATA, POLL_DATA,
+    AI_DATA, POLL_DATA, RESET_DATA,
     
     # Games
     COINFLIP_DATA, SLOTS_DATA, ROULETTE_DATA, RPS_DATA, TRIVIA_DATA,
@@ -109,7 +110,7 @@ COMMAND_HANDLERS = {
     "marry": cmd_marry, "divorce": cmd_divorce,
     
     # Utility
-    "ask": cmd_ask, "poll": cmd_poll,
+    "ask": cmd_ask, "poll": cmd_poll, "reset": cmd_reset,
     
     # Games
     "coinflip": cmd_coinflip, "slots": cmd_slots, "roulette": cmd_roulette, 
