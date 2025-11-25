@@ -12,33 +12,31 @@ def cmd_help(data):
                 {
                     "title": "📜 Clavin Bot Command List",
                     "description": "Here is a list of all available bot functions:",
-                    "color": 0x3498db,  # Blue
+                    "color": 0x3498db,
                     "fields": [
                         {
-                            "name": "💰 Economy Module",
-                            # Dodano buy_title
-                            "value": "`/balance` `/daily` `/pay` `/richlist`\n`/work` `/shop` `/rob`\n`/buy_title` - Prestige titles",
-                            "inline": False
-                        },
-{
-                            "name": "🎉 Fun Module",
-                            # Dodano blackjack i duel
-                            "value": "`/poker` `/blackjack` `/roulette`\n`/duel` - Challenge player\n`/coinflip` `/slots` `/cat`",
-                            "inline": False
-                        },
-                {
-                            "name": "📈 Levels & Crypto",
-                            "value": "`/rank` - Check Level\n`/leaderboard` - Top Levels\n`/crypto` - Trade ClavinCoin",
+                            "name": "💰 Economy & RPG",
+                            "value": "`balance` `daily` `pay` `richlist`\n`work` `shop` `rob`\n`buy_title` `crypto`",
                             "inline": False
                         },
                         {
-                            "name": "⚙️ Root Module",
-                            "value": "`/synctest` - Check connection status",
+                            "name": "🎰 Casino & Games",
+                            "value": "`poker` - Video Poker\n`blackjack` - Classic 21\n`roulette` - Casino Roulette\n`slots` - Slot Machine\n`coinflip` - Heads or Tails\n`duel` - Challenge a player",
                             "inline": False
                         },
                         {
-                            "name": "🛡️ Admin Module",
-                            "value": "`/serverinfo` - Server information\n`/help` - Displays this list",
+                            "name": "🎉 Fun & Social",
+                            "value": "`cat` `hello` `8ball`\n`ship` - Love Calculator\n`avatar` - Get User Picture",
+                            "inline": False
+                        },
+                        {
+                            "name": "📈 Levels",
+                            "value": "`rank` - Check Level\n`leaderboard` - XP Ranking",
+                            "inline": False
+                        },
+                        {
+                            "name": "⚙️ System",
+                            "value": "`serverinfo` `synctest` `help`",
                             "inline": False
                         }
                     ],
