@@ -24,9 +24,10 @@ def cmd_help(data):
                             "value": "`poker` - Video Poker\n`blackjack` - Classic 21\n`roulette` - Casino Roulette\n`slots` - Slot Machine\n`coinflip` - Heads or Tails\n`duel` - Challenge a player",
                             "inline": False
                         },
-                    {
+                        {
                             "name": "🎉 Fun & Social",
-                            "value": "`profile` - Check stats\n`trivia` - Quiz for cash\n`rps` - Rock Paper Scissors\n`marry` `divorce` `ship` `avatar`",
+                            # Dodano meme i roll
+                            "value": "`/meme` - Generate memes\n`/roll` - Roll dice (RPG)\n`/profile` `trivia` `rps` `ship` `cat`",
                             "inline": False
                         },
                         {

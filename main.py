@@ -9,34 +9,37 @@ from nacl.exceptions import BadSignatureError
 #              MODULE IMPORTS
 # ==========================================
 
-# --- FUN (Zostały w folderze fun) ---
+# --- FUN (Simple stuff) ---
 from commands.fun.hello import HELLO_DATA, cmd_hello
 from commands.fun.cat import CAT_DATA, cmd_cat
 from commands.fun.eightball import EIGHTBALL_DATA, cmd_eightball
 
-# --- SOCIAL (Nowy folder social) ---
+# --- UTILITY (Tools) ---
+from commands.utility.ai import AI_DATA, cmd_ask
+from commands.utility.poll import POLL_DATA, cmd_poll, handle_poll_component
+from commands.utility.weather import WEATHER_DATA, cmd_weather # <--- NOWOŚĆ
+
+# --- SOCIAL (User interactions) ---
+# Przywracamy brakujące importy!
 from commands.social.profile import PROFILE_DATA, cmd_profile
 from commands.social.avatar import AVATAR_DATA, cmd_avatar
 from commands.social.ship import SHIP_DATA, cmd_ship
 from commands.social.marry import MARRY_DATA, DIVORCE_DATA, cmd_marry, cmd_divorce, handle_marry_component
 
-# --- UTILITY (Nowy folder utility) ---
-from commands.utility.ai import AI_DATA, cmd_ask
-from commands.utility.poll import POLL_DATA, cmd_poll, handle_poll_component
-from commands.utility.reset import RESET_DATA, cmd_reset
-
-# --- GAMES (Nowy folder games) ---
+# --- GAMES (Casino & Minigames) ---
 from commands.games.coinflip import COINFLIP_DATA, cmd_coinflip
 from commands.games.slots import SLOTS_DATA, cmd_slots
 from commands.games.roulette import ROULETTE_DATA, cmd_roulette
+# Przywracamy brakujące gry!
 from commands.games.rps import RPS_DATA, cmd_rps
 from commands.games.trivia import TRIVIA_DATA, cmd_trivia, handle_trivia_component
+
 # Games with Buttons
 from commands.games.poker import POKER_DATA, cmd_poker, handle_poker_component
 from commands.games.blackjack import BLACKJACK_DATA, cmd_blackjack, handle_blackjack_component
 from commands.games.duel import DUEL_DATA, cmd_duel, handle_duel_component
 
-# --- ECONOMY & RPG (Bez zmian) ---
+# --- ECONOMY & RPG ---
 from commands.economy.money import BALANCE_DATA, cmd_balance, DAILY_DATA, cmd_daily
 from commands.economy.pay import PAY_DATA, cmd_pay
 from commands.economy.richlist import RICHLIST_DATA, cmd_richlist
@@ -44,18 +47,19 @@ from commands.economy.work import WORK_DATA, cmd_work
 from commands.economy.shop import SHOP_DATA, cmd_shop, handle_shop_component
 from commands.economy.rob import ROB_DATA, cmd_rob
 from commands.economy.crypto import CRYPTO_DATA, cmd_crypto
-# Usunięto titles.py (funkcje są w shop.py)
+from commands.economy.gta import CRIME_DATA, BUSINESS_DATA, BUY_BIZ_DATA, LAUNDER_DATA
+from commands.economy.gta import cmd_crime, cmd_businesses, cmd_buy_business, cmd_launder
 
-# --- LEVELS (Bez zmian) ---
+# --- LEVELS ---
 from commands.levels.rank import RANK_DATA, cmd_rank, LEADERBOARD_XP_DATA, cmd_leaderboard_xp
 
-# --- ADMIN & SYSTEM (Bez zmian) ---
+# --- ADMIN & SYSTEM ---
 from commands.root.synctest import SYNCTEST_DATA, cmd_synctest
 from commands.admin.server import SERVER_DATA, cmd_server_info
 from commands.admin.help import HELP_DATA, cmd_help
 from commands.admin.moderation import CLEAR_DATA, cmd_clear, KICK_DATA, cmd_kick, BAN_DATA, cmd_ban
 
-# --- DATABASE (XP SYSTEM) ---
+# --- DATABASE ---
 from database import add_xp
 
 app = Flask(__name__)
@@ -74,21 +78,20 @@ ALL_COMMANDS = [
     # Fun
     HELLO_DATA, CAT_DATA, EIGHTBALL_DATA,
     
-    # Social
+    # Utility
+    AI_DATA, POLL_DATA, WEATHER_DATA,
+    
+    # Social (Przywrócone)
     PROFILE_DATA, AVATAR_DATA, SHIP_DATA, MARRY_DATA, DIVORCE_DATA,
     
-    # Utility
-    AI_DATA, POLL_DATA, RESET_DATA,
-    
-    # Games
+    # Games (Przywrócone)
     COINFLIP_DATA, SLOTS_DATA, ROULETTE_DATA, RPS_DATA, TRIVIA_DATA,
     POKER_DATA, BLACKJACK_DATA, DUEL_DATA,
     
-    # Economy
+    # Economy & GTA
     BALANCE_DATA, DAILY_DATA, PAY_DATA, RICHLIST_DATA,
     WORK_DATA, SHOP_DATA, ROB_DATA, CRYPTO_DATA,
-    # Nowe moduły GTA:
-    # CRIME_DATA, BUSINESS_DATA, BUY_BIZ_DATA, LAUNDER_DATA (Jeśli dodałeś GTA, odkomentuj)
+    CRIME_DATA, BUSINESS_DATA, BUY_BIZ_DATA, LAUNDER_DATA,
     
     # Levels
     RANK_DATA, LEADERBOARD_XP_DATA,
@@ -105,21 +108,22 @@ COMMAND_HANDLERS = {
     # Fun
     "hello": cmd_hello, "cat": cmd_cat, "8ball": cmd_eightball,
     
+    # Utility
+    "ask": cmd_ask, "poll": cmd_poll, "weather": cmd_weather,
+    
     # Social
     "profile": cmd_profile, "avatar": cmd_avatar, "ship": cmd_ship, 
     "marry": cmd_marry, "divorce": cmd_divorce,
-    
-    # Utility
-    "ask": cmd_ask, "poll": cmd_poll, "reset": cmd_reset,
     
     # Games
     "coinflip": cmd_coinflip, "slots": cmd_slots, "roulette": cmd_roulette, 
     "rps": cmd_rps, "trivia": cmd_trivia,
     "poker": cmd_poker, "blackjack": cmd_blackjack, "duel": cmd_duel,
     
-    # Economy
+    # Economy & GTA
     "balance": cmd_balance, "daily": cmd_daily, "pay": cmd_pay, "richlist": cmd_richlist,
     "work": cmd_work, "shop": cmd_shop, "rob": cmd_rob, "crypto": cmd_crypto,
+    "crime": cmd_crime, "businesses": cmd_businesses, "buy_business": cmd_buy_business, "launder": cmd_launder,
     
     # Levels
     "rank": cmd_rank, "leaderboard": cmd_leaderboard_xp,
@@ -135,7 +139,6 @@ COMMAND_HANDLERS = {
 
 @app.route('/', methods=['POST'])
 def interactions():
-    # 1. Security Verification
     verify_key = VerifyKey(bytes.fromhex(PUBLIC_KEY))
     signature = request.headers.get('X-Signature-Ed25519')
     timestamp = request.headers.get('X-Signature-Timestamp')
@@ -148,24 +151,21 @@ def interactions():
 
     r = request.json
     
-    # 2. Handle PING
     if r["type"] == 1:
         return jsonify({"type": 1})
     
-    # --- GLOBAL XP SYSTEM ---
+    # XP System
     leveled_up = False
     new_lvl = 0
-    
     if "member" in r:
         user_id = r["member"]["user"]["id"]
         xp_gain = random.randint(5, 15)
         new_lvl, leveled_up = add_xp(user_id, xp_gain)
     
-    # 3. Handle SLASH COMMANDS
+    # Slash Commands
     if r["type"] == 2:
         name = r["data"]["name"]
         
-        # Pass context
         if "guild_id" in r: r["data"]["guild_id"] = r["guild_id"]
         if "member" in r: r["data"]["member"] = r["member"]
         r["data"]["token"] = r.get("token")
@@ -176,18 +176,15 @@ def interactions():
 
         if name in COMMAND_HANDLERS:
             response = COMMAND_HANDLERS[name](r["data"])
-            
-            # XP Notification
             if leveled_up and isinstance(response, dict) and "data" in response:
                 msg = response["data"].get("content", "")
                 prefix = "\n\n" if msg else ""
                 response["data"]["content"] = f"{msg}{prefix}⭐ **LEVEL UP!** You reached **Level {new_lvl}**!"
-            
             return jsonify(response)
             
         return jsonify({"error": "unknown command"}), 400
     
-    # 4. Handle COMPONENTS
+    # Components
     if r["type"] == 3:
         custom_id = r["data"]["custom_id"]
         response = None
@@ -196,10 +193,11 @@ def interactions():
         if custom_id.startswith("poker_"): response = handle_poker_component(r)
         elif custom_id.startswith("bj_"): response = handle_blackjack_component(r)
         elif custom_id.startswith("duel_"): response = handle_duel_component(r)
-        elif custom_id.startswith("trivia_"): response = handle_trivia_component(r)
         elif custom_id.startswith("poll_"): response = handle_poll_component(r)
-        elif custom_id.startswith("marry_"): response = handle_marry_component(r)
         elif custom_id == "shop_buy_select": response = handle_shop_component(r)
+        # Przywrócone handlery:
+        elif custom_id.startswith("trivia_"): response = handle_trivia_component(r)
+        elif custom_id.startswith("marry_"): response = handle_marry_component(r)
             
         if response:
             return jsonify(response)
