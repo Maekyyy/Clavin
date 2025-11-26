@@ -5,7 +5,7 @@ from threading import Thread
 
 AI_DATA = {
     "name": "ask",
-    "description": "Ask Clavin AI (Powered by Gemini 3.0 Pro)",
+    "description": "Ask Clavin AI (Powered by Gemini 3.0)",
     "type": 1,
     "options": [{
         "name": "question",
@@ -18,32 +18,43 @@ AI_DATA = {
 def process_ai_response(interaction_token, app_id, question):
     api_key = os.environ.get("GOOGLE_API_KEY")
     
+    embed = {}
+    
     if not api_key:
-        response_text = "❌ Error: Missing GOOGLE_API_KEY."
+        content = "❌ Error: Missing GOOGLE_API_KEY."
+        payload = {"content": content}
     else:
         try:
             genai.configure(api_key=api_key)
             
-            # USTAWIAMY MODEL GEMINI 3.0 PRO (z Twojej listy)
+            # Model
             model_name = 'gemini-3-pro-preview'
             model = genai.GenerativeModel(model_name)
             
             response = model.generate_content(question)
             text = response.text
             
-            # Przycinanie (Discord ma limit 2000 znaków)
-            if len(text) > 1900:
-                text = text[:1900] + "... (message too long)"
-                
-            response_text = f"🧠 **Gemini 3.0:** {question}\n\n{text}"
+            # Limit Embeda to 4096 znaków. Ucinamy przy 4000 dla marginesu.
+            if len(text) > 4000:
+                text = text[:4000] + "\n\n... (text limit reached)"
+            
+            # Tworzymy ładny Embed zamiast zwykłego tekstu
+            embed = {
+                "title": f"🧠 {question[:250]}", # Tytuł to pytanie (max 256 znaków)
+                "description": text,
+                "color": 0x3498db, # Niebieski
+                "footer": {"text": f"Model: {model_name}"}
+            }
+            
+            payload = {"embeds": [embed]}
             
         except Exception as e:
-            # Diagnostyka w razie błędu
-            response_text = f"❌ AI Error ({model_name}): {str(e)}"
+            # Obsługa błędów (nadal jako zwykły tekst, żeby było widać co się stało)
+            payload = {"content": f"❌ AI Error: {str(e)}"}
 
-    # Wysyłanie odpowiedzi
+    # Wysyłanie odpowiedzi (PATCH)
     url = f"https://discord.com/api/v10/webhooks/{app_id}/{interaction_token}/messages/@original"
-    requests.patch(url, json={"content": response_text})
+    requests.patch(url, json=payload)
 
 def cmd_ask(data):
     token = data.get("token")
