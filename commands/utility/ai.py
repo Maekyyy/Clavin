@@ -3,7 +3,6 @@ import requests
 import google.generativeai as genai
 from threading import Thread
 
-# --- DEFINICJA KOMENDY ---
 AI_DATA = {
     "name": "ask",
     "description": "Ask Clavin AI (Powered by Gemini)",
@@ -11,56 +10,55 @@ AI_DATA = {
     "options": [{
         "name": "question",
         "description": "What do you want to know?",
-        "type": 3, # String
+        "type": 3,
         "required": True
     }]
 }
 
-# --- FUNKCJA W TLE ---
 def process_ai_response(interaction_token, app_id, question):
-    """Wysyła zapytanie do AI i edytuje wiadomość na Discordzie."""
     api_key = os.environ.get("GOOGLE_API_KEY")
     
     if not api_key:
-        response_text = "❌ Error: Missing GOOGLE_API_KEY in configuration."
+        response_text = "❌ Error: Missing GOOGLE_API_KEY."
     else:
         try:
-            # Konfiguracja Gemini
             genai.configure(api_key=api_key)
             
-            # ZMIANA MODELU NA GEMINI-PRO (Bardziej stabilny)
-            model = genai.GenerativeModel('gemini-pro')
+            # PRÓBA 1: Używamy modelu 'gemini-1.5-flash' (najnowszy standard)
+            model_name = 'gemini-1.5-flash'
+            model = genai.GenerativeModel(model_name)
             
-            # Generowanie (limit znaków dla Discorda to 2000)
             response = model.generate_content(question)
             text = response.text
             
-            # Przycinanie zbyt długiej odpowiedzi
             if len(text) > 1900:
-                text = text[:1900] + "... (message too long)"
+                text = text[:1900] + "... (cut)"
                 
             response_text = f"🧠 **Question:** {question}\n\n{text}"
             
         except Exception as e:
-            response_text = f"❌ AI Error: {str(e)}"
+            # DIAGNOSTYKA: Jeśli model nie działa, sprawdzamy jakie są dostępne
+            try:
+                available_models = []
+                for m in genai.list_models():
+                    if 'generateContent' in m.supported_generation_methods:
+                        available_models.append(m.name)
+                
+                models_str = ", ".join(available_models)
+                response_text = f"❌ AI Error: {str(e)}\n\n**Available Models:** {models_str}"
+            except:
+                response_text = f"❌ AI Error (Critical): {str(e)}"
 
-    # WYSYŁAMY ODPOWIEDŹ DO DISCORDA (PATCH)
     url = f"https://discord.com/api/v10/webhooks/{app_id}/{interaction_token}/messages/@original"
     requests.patch(url, json={"content": response_text})
 
-# --- GŁÓWNA FUNKCJA ---
 def cmd_ask(data):
-    # Pobieramy dane
     token = data.get("token")
     app_id = data.get("application_id")
     options = data.get("options", [])
     question = options[0]["value"]
     
-    # Uruchamiamy AI w tle
     thread = Thread(target=process_ai_response, args=(token, app_id, question))
     thread.start()
 
-    # Odpowiedź natychmiastowa "Myślę..." (Typ 5)
-    return {
-        "type": 5
-    }
+    return {"type": 5}
