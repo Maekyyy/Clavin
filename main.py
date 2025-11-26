@@ -27,6 +27,7 @@ from commands.social.profile import PROFILE_DATA, cmd_profile
 from commands.social.avatar import AVATAR_DATA, cmd_avatar
 from commands.social.ship import SHIP_DATA, cmd_ship
 from commands.social.marry import MARRY_DATA, DIVORCE_DATA, cmd_marry, cmd_divorce, handle_marry_component
+from commands.social.achievements import ACHIEVEMENTS_DATA, cmd_achievements
 
 # --- GAMES (Folder: commands/games) ---
 from commands.games.coinflip import COINFLIP_DATA, cmd_coinflip
@@ -48,6 +49,7 @@ from commands.economy.shop import SHOP_DATA, cmd_shop, handle_shop_component
 from commands.economy.rob import ROB_DATA, cmd_rob
 from commands.economy.crypto import CRYPTO_DATA, cmd_crypto
 from commands.economy.contract import CONTRACT_DATA, cmd_contract
+from commands.economy.gift import GIFT_DATA, cmd_gift
 # GTA Module
 from commands.economy.gta import CRIME_DATA, BUSINESS_DATA, BUY_BIZ_DATA, LAUNDER_DATA
 from commands.economy.gta import cmd_crime, cmd_businesses, cmd_buy_business, cmd_launder
@@ -78,7 +80,7 @@ APP_ID = os.environ.get("DISCORD_APP_ID")
 # ==========================================
 ALL_COMMANDS = [
     # Fun
-    HELLO_DATA, CAT_DATA, EIGHTBALL_DATA, MEME_DATA, ROLL_DATA,
+    HELLO_DATA, CAT_DATA, EIGHTBALL_DATA, MEME_DATA, ROLL_DATA, ACHIEVEMENTS_DATA,
     
     # Social
     PROFILE_DATA, AVATAR_DATA, SHIP_DATA, MARRY_DATA, DIVORCE_DATA,
@@ -93,7 +95,7 @@ ALL_COMMANDS = [
     # Economy & GTA
     BALANCE_DATA, DAILY_DATA, PAY_DATA, RICHLIST_DATA,
     WORK_DATA, SHOP_DATA, ROB_DATA, CRYPTO_DATA, CONTRACT_DATA,
-    CRIME_DATA, BUSINESS_DATA, BUY_BIZ_DATA, LAUNDER_DATA,
+    CRIME_DATA, BUSINESS_DATA, BUY_BIZ_DATA, LAUNDER_DATA, GIFT_DATA,
     
     # Levels
     RANK_DATA, LEADERBOARD_XP_DATA,
@@ -109,7 +111,7 @@ ALL_COMMANDS = [
 COMMAND_HANDLERS = {
     # Fun
     "hello": cmd_hello, "cat": cmd_cat, "8ball": cmd_eightball, 
-    "meme": cmd_meme, "roll": cmd_roll,
+    "meme": cmd_meme, "roll": cmd_roll, "achievements": cmd_achievements,
     
     # Utility
     "ask": cmd_ask, "poll": cmd_poll, "weather": cmd_weather, "reset": cmd_reset,
@@ -126,7 +128,7 @@ COMMAND_HANDLERS = {
     # Economy & GTA
     "balance": cmd_balance, "daily": cmd_daily, "pay": cmd_pay, "richlist": cmd_richlist,
     "work": cmd_work, "shop": cmd_shop, "rob": cmd_rob, "crypto": cmd_crypto, "contract": cmd_contract,
-    "crime": cmd_crime, "businesses": cmd_businesses, "buy_business": cmd_buy_business, "launder": cmd_launder,
+    "crime": cmd_crime, "businesses": cmd_businesses, "buy_business": cmd_buy_business, "launder": cmd_launder, "gift": cmd_gift,
     
     # Levels
     "rank": cmd_rank, "leaderboard": cmd_leaderboard_xp,

@@ -357,3 +357,52 @@ def divorce_users(user1_id, user2_id):
 def get_full_profile(user_id):
     doc = db.collection('users').document(str(user_id)).get()
     return doc.to_dict() if doc.exists else {}
+
+# ==========================================
+#           OSIĄGNIĘCIA I PREZENTY
+# ==========================================
+
+def transfer_item(sender_id, receiver_id, item_id):
+    """Bezpiecznie przenosi przedmiot od nadawcy do odbiorcy."""
+    sender_ref = db.collection('users').document(str(sender_id))
+    receiver_ref = db.collection('users').document(str(receiver_id))
+    
+    @firestore.transactional
+    def tx_transfer_item(transaction, send_ref, recv_ref):
+        # 1. Pobierz dane nadawcy
+        sender_snap = send_ref.get(transaction=transaction)
+        if not sender_snap.exists: return False, "Sender has no account."
+        
+        sender_inv = sender_snap.to_dict().get('inventory', [])
+        
+        # 2. Sprawdź czy ma przedmiot
+        if item_id not in sender_inv:
+            return False, "You don't have this item."
+            
+        # 3. Pobierz dane odbiorcy (czy istnieje)
+        recv_snap = recv_ref.get(transaction=transaction)
+        if not recv_snap.exists:
+            # Tworzymy puste konto dla odbiorcy
+            transaction.set(recv_ref, {'inventory': []}, merge=True)
+            
+        # 4. Wykonaj transfer (Array Remove / Array Union nie działają idealnie wewnątrz transaction.update na listach lokalnych,
+        # więc robimy to na pobranych danych).
+        sender_inv.remove(item_id) # Usuń jedną sztukę
+        
+        transaction.update(send_ref, {'inventory': sender_inv})
+        transaction.update(recv_ref, {'inventory': firestore.ArrayUnion([item_id])})
+        
+        return True, "Success"
+
+    transaction = db.transaction()
+    return tx_transfer_item(transaction, sender_ref, receiver_ref)
+
+def get_achievements(user_id):
+    """Pobiera listę odblokowanych osiągnięć (lista ID)."""
+    doc = db.collection('users').document(str(user_id)).get()
+    return doc.to_dict().get('achievements', []) if doc.exists else []
+
+def unlock_achievement(user_id, achievement_id):
+    """Dodaje osiągnięcie do profilu."""
+    user_ref = db.collection('users').document(str(user_id))
+    user_ref.update({"achievements": firestore.ArrayUnion([achievement_id])})

@@ -26,9 +26,8 @@ def cmd_help(data):
                             "inline": False
                         },
                         {
-                            "name": "🎉 Fun & Social",
-                            # Poprawione opisy na angielski
-                            "value": "`/meme` - Meme Generator\n`/roll` - Dice Roll (RPG)\n`/ship` `/avatar` `/cat` `/8ball` `/hello`",
+                            "name": "🏆 Fun & Social",
+                            "value": "`achievements` - Check badges\n`gift` - Give items\n`profile` `rank` `marry`",
                             "inline": False
                         },
                         {
