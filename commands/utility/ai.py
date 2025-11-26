@@ -5,7 +5,7 @@ from threading import Thread
 
 AI_DATA = {
     "name": "ask",
-    "description": "Ask Clavin AI (Powered by Gemini)",
+    "description": "Ask Clavin AI (Powered by Gemini 3.0 Pro)",
     "type": 1,
     "options": [{
         "name": "question",
@@ -24,31 +24,24 @@ def process_ai_response(interaction_token, app_id, question):
         try:
             genai.configure(api_key=api_key)
             
-            # PRÓBA 1: Używamy modelu 'gemini-1.5-flash' (najnowszy standard)
-            model_name = 'gemini-1.5-flash'
+            # USTAWIAMY MODEL GEMINI 3.0 PRO (z Twojej listy)
+            model_name = 'gemini-3-pro-preview'
             model = genai.GenerativeModel(model_name)
             
             response = model.generate_content(question)
             text = response.text
             
+            # Przycinanie (Discord ma limit 2000 znaków)
             if len(text) > 1900:
-                text = text[:1900] + "... (cut)"
+                text = text[:1900] + "... (message too long)"
                 
-            response_text = f"🧠 **Question:** {question}\n\n{text}"
+            response_text = f"🧠 **Gemini 3.0:** {question}\n\n{text}"
             
         except Exception as e:
-            # DIAGNOSTYKA: Jeśli model nie działa, sprawdzamy jakie są dostępne
-            try:
-                available_models = []
-                for m in genai.list_models():
-                    if 'generateContent' in m.supported_generation_methods:
-                        available_models.append(m.name)
-                
-                models_str = ", ".join(available_models)
-                response_text = f"❌ AI Error: {str(e)}\n\n**Available Models:** {models_str}"
-            except:
-                response_text = f"❌ AI Error (Critical): {str(e)}"
+            # Diagnostyka w razie błędu
+            response_text = f"❌ AI Error ({model_name}): {str(e)}"
 
+    # Wysyłanie odpowiedzi
     url = f"https://discord.com/api/v10/webhooks/{app_id}/{interaction_token}/messages/@original"
     requests.patch(url, json={"content": response_text})
 
