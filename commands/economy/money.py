@@ -1,8 +1,6 @@
-# Dodajemy check_cooldown do importów
-from database import get_balance, claim_daily, check_cooldown
 from database import get_balance, claim_daily, check_cooldown, get_title
 
-# --- DEFINICJA BALANCE (Bez zmian) ---
+# --- DEFINICJA BALANCE ---
 BALANCE_DATA = {
     "name": "balance",
     "description": "Check your wallet balance",
@@ -14,10 +12,11 @@ def cmd_balance(data):
     user = member.get("user", {})
     user_id = user.get("id")
     
+    # Pobieramy kasę i tytuł
     money = get_balance(user_id)
-    title = get_title(user_id) # Pobierz tytuł
+    title = get_title(user_id)
     
-# Jeśli ma tytuł, dodaj go przed nickiem
+    # Jeśli użytkownik ma tytuł, dodajemy go przed nickiem (np. [King] Nick)
     display_name = f"[{title}] {user['username']}" if title else user['username']
     
     return {
@@ -27,7 +26,7 @@ def cmd_balance(data):
         }
     }
 
-# --- DEFINICJA DAILY (Z NAPRAWIONĄ BLOKADĄ) ---
+# --- DEFINICJA DAILY ---
 DAILY_DATA = {
     "name": "daily",
     "description": "Collect your daily 1000 chips",
@@ -35,19 +34,14 @@ DAILY_DATA = {
 }
 
 def cmd_daily(data):
-    member = data.get("member", {})
-    user = member.get("user", {})
-    user_id = user.get("id")
+    user_id = data["member"]["user"]["id"]
     
-    # 1. Sprawdź cooldown (86400 sekund = 24 godziny)
-    # Funkcja check_cooldown musi być w database.py!
+    # 1. Sprawdź cooldown (86400 sekund = 24h)
     can_claim, time_left = check_cooldown(user_id, "daily", 86400)
     
     if not can_claim:
-        # Obliczamy ile czasu zostało
         hours = int(time_left // 3600)
         minutes = int((time_left % 3600) // 60)
-        
         return {
             "type": 4,
             "data": {
@@ -55,7 +49,7 @@ def cmd_daily(data):
             }
         }
 
-    # 2. Jeśli można odebrać -> Wypłać
+    # 2. Wypłać nagrodę
     new_balance = claim_daily(user_id)
     
     return {

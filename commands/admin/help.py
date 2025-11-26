@@ -16,7 +16,8 @@ def cmd_help(data):
                     "fields": [
                         {
                             "name": "💰 Economy & RPG",
-                            "value": "`/balance` `/daily` `/pay` `/richlist`\n`/work` `/shop` `/rob` `/buy_title` `/crypto`",
+                            # Usunąłem buy_title (jest w shop), dodałem crypto
+                            "value": "`/balance` `/daily` `/pay` `/richlist`\n`/work` `/shop` `/rob` `/crypto`",
                             "inline": False
                         },
                         {
@@ -26,8 +27,8 @@ def cmd_help(data):
                         },
                         {
                             "name": "🎉 Fun & Social",
-                            # Dodano tutaj roll i meme:
-                            "value": "`/meme` - Generator memów\n`/roll` - Rzut kośćmi (RPG)\n`/ship` `/avatar` `/cat` `/8ball` `/hello`",
+                            # Poprawione opisy na angielski
+                            "value": "`/meme` - Meme Generator\n`/roll` - Dice Roll (RPG)\n`/ship` `/avatar` `/cat` `/8ball` `/hello`",
                             "inline": False
                         },
                         {
@@ -37,8 +38,8 @@ def cmd_help(data):
                         },
                         {
                             "name": "⚙️ Utility & System",
-                            # Dodano ask (AI) i poll
-                            "value": "`/ask` - Chat with AI\n`/poll` - Create poll\n`/serverinfo` `/synctest` `/help`",
+                            # Dodano weather i reset
+                            "value": "`/ask` - Chat with AI\n`/weather` - Check weather\n`/poll` - Create poll\n`/reset` - Fix stuck game\n`/serverinfo` `/synctest` `/help`",
                             "inline": False
                         },
                         {
