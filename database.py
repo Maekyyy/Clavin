@@ -479,3 +479,21 @@ def payout_winner(winner_id, amount):
     """Wypłaca nagrodę zwycięzcy loterii (funkcja pomocnicza)."""
     user_ref = db.collection('users').document(str(winner_id))
     user_ref.update({'balance': firestore.Increment(amount)})
+    
+    
+# ------------------================================
+
+def get_global_stats():
+    """Liczy użytkowników i całkowitą kasę na serwerze."""
+    users_ref = db.collection('users')
+    # Pobieramy tylko pole 'balance' dla oszczędności transferu
+    all_users = users_ref.select(['balance']).stream()
+    
+    count = 0
+    total_money = 0
+    
+    for user in all_users:
+        count += 1
+        total_money += user.to_dict().get('balance', 0)
+        
+    return count, total_money
