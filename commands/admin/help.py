@@ -14,15 +14,16 @@ def cmd_help(data):
                     "description": "Here is a list of all available bot functions:",
                     "color": 0x3498db,  # Blue
                     "fields": [
-                        {
+        {
                             "name": "💰 Economy & RPG",
-                            # Usunąłem buy_title (jest w shop), dodałem crypto
-                            "value": "`/balance` `/daily` `/pay` `/richlist`\n`/work` `/shop` `/rob` `/crypto`",
+                            # Dodano contract
+                            "value": "`/balance` `/daily` `/pay` `/richlist`\n`/work` `/contract` `/shop` `/rob`\n`/buy_title` `/crypto`",
                             "inline": False
                         },
                         {
                             "name": "🎰 Casino & Games",
-                            "value": "`/poker` `/blackjack` `/roulette`\n`/slots` `/coinflip` `/duel`",
+                            # Dodano lottery
+                            "value": "`/poker` `/blackjack` `/roulette`\n`/slots` `/lottery` `/coinflip` `/duel`",
                             "inline": False
                         },
                         {

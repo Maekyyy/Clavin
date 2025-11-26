@@ -35,6 +35,7 @@ from commands.games.slots import SLOTS_DATA, cmd_slots
 from commands.games.roulette import ROULETTE_DATA, cmd_roulette
 from commands.games.rps import RPS_DATA, cmd_rps
 from commands.games.trivia import TRIVIA_DATA, cmd_trivia, handle_trivia_component
+from commands.games.lottery import LOTTERY_DATA, cmd_lottery
 # Games with Buttons
 from commands.games.poker import POKER_DATA, cmd_poker, handle_poker_component
 from commands.games.blackjack import BLACKJACK_DATA, cmd_blackjack, handle_blackjack_component
@@ -90,7 +91,7 @@ ALL_COMMANDS = [
     
     # Games
     COINFLIP_DATA, SLOTS_DATA, ROULETTE_DATA, RPS_DATA, TRIVIA_DATA,
-    POKER_DATA, BLACKJACK_DATA, DUEL_DATA,
+    POKER_DATA, BLACKJACK_DATA, DUEL_DATA, LOTTERY_DATA,
     
     # Economy & GTA
     BALANCE_DATA, DAILY_DATA, PAY_DATA, RICHLIST_DATA,
@@ -123,7 +124,7 @@ COMMAND_HANDLERS = {
     # Games
     "coinflip": cmd_coinflip, "slots": cmd_slots, "roulette": cmd_roulette, 
     "rps": cmd_rps, "trivia": cmd_trivia,
-    "poker": cmd_poker, "blackjack": cmd_blackjack, "duel": cmd_duel,
+    "poker": cmd_poker, "blackjack": cmd_blackjack, "duel": cmd_duel, "lottery": cmd_lottery,
     
     # Economy & GTA
     "balance": cmd_balance, "daily": cmd_daily, "pay": cmd_pay, "richlist": cmd_richlist,

@@ -406,3 +406,76 @@ def unlock_achievement(user_id, achievement_id):
     """Dodaje osiągnięcie do profilu."""
     user_ref = db.collection('users').document(str(user_id))
     user_ref.update({"achievements": firestore.ArrayUnion([achievement_id])})
+    
+# ==========================================
+#              SYSTEM LOTERII
+# ==========================================
+
+def get_lottery_state():
+    """Pobiera stan loterii (pula, uczestnicy)."""
+    doc = db.collection('system').document('lottery').get()
+    if doc.exists:
+        return doc.to_dict()
+    return {"pot": 0, "tickets": []}
+
+def buy_lottery_ticket(user_id, price=100):
+    """Kupuje bilet. Jeśli to 10-ty bilet -> losuje zwycięzcę!"""
+    user_ref = db.collection('users').document(str(user_id))
+    lottery_ref = db.collection('system').document('lottery')
+    
+    @firestore.transactional
+    def tx_buy_ticket(transaction, u_ref, l_ref):
+        # 1. Sprawdź kasę usera
+        u_snap = u_ref.get(transaction=transaction)
+        if not u_snap.exists: return False, "No account"
+        
+        balance = u_snap.to_dict().get('balance', 0)
+        if balance < price: return False, "Not enough cash"
+        
+        # 2. Pobierz stan loterii
+        l_snap = l_ref.get(transaction=transaction)
+        if l_snap.exists:
+            l_data = l_snap.to_dict()
+            pot = l_data.get('pot', 0)
+            tickets = l_data.get('tickets', [])
+        else:
+            pot = 0
+            tickets = []
+            
+        # 3. Aktualizuj (Kupno)
+        new_balance = balance - price
+        new_pot = pot + price
+        tickets.append(str(user_id))
+        
+        transaction.update(u_ref, {'balance': new_balance})
+        
+        # 4. SPRAWDŹ CZY KONIEC (np. 10 biletów)
+        if len(tickets) >= 10:
+            winner_id = random.choice(tickets)
+            
+            # Wypłać zwycięzcy (musimy pobrać jego ref, jeśli to inna osoba niż kupujący)
+            if winner_id == str(user_id):
+                # Wygrał ten co kupił teraz
+                transaction.update(u_ref, {'balance': new_balance + new_pot})
+            else:
+                # Wygrał ktoś inny (wymaga osobnego update, ale w transakcji to trudne dla dynamicznego ID)
+                # UPROSZCZENIE: W Serverless transakcje na wielu losowych dokumentach są trudne.
+                # Zrobimy to poza transakcją lub w uproszczony sposób:
+                # Zapiszemy "pending_win" w dokumencie loterii i obsłużymy to osobno
+                pass 
+            
+            # Reset loterii
+            transaction.set(l_ref, {'pot': 0, 'tickets': []})
+            return True, f"WINNER|{winner_id}|{new_pot}"
+        else:
+            # Po prostu dodaj bilet
+            transaction.set(l_ref, {'pot': new_pot, 'tickets': tickets}, merge=True)
+            return True, "TICKET"
+
+    transaction = db.transaction()
+    return tx_buy_ticket(transaction, user_ref, lottery_ref)
+
+def payout_winner(winner_id, amount):
+    """Wypłaca nagrodę zwycięzcy loterii (funkcja pomocnicza)."""
+    user_ref = db.collection('users').document(str(winner_id))
+    user_ref.update({'balance': firestore.Increment(amount)})
