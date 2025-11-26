@@ -40,6 +40,7 @@ from commands.games.lottery import LOTTERY_DATA, cmd_lottery
 from commands.games.poker import POKER_DATA, cmd_poker, handle_poker_component
 from commands.games.blackjack import BLACKJACK_DATA, cmd_blackjack, handle_blackjack_component
 from commands.games.duel import DUEL_DATA, cmd_duel, handle_duel_component
+from commands.games.tictactoe import TTT_DATA, cmd_tictactoe, handle_ttt_component
 
 # --- ECONOMY & RPG (Folder: commands/economy) ---
 from commands.economy.money import BALANCE_DATA, cmd_balance, DAILY_DATA, cmd_daily
@@ -60,6 +61,7 @@ from commands.levels.rank import RANK_DATA, cmd_rank, LEADERBOARD_XP_DATA, cmd_l
 
 # --- ADMIN & SYSTEM (Folder: commands/admin & root) ---
 from commands.root.synctest import SYNCTEST_DATA, cmd_synctest
+from commands.root.stats import STATS_DATA, cmd_stats
 from commands.admin.server import SERVER_DATA, cmd_server_info
 from commands.admin.help import HELP_DATA, cmd_help
 from commands.admin.moderation import CLEAR_DATA, cmd_clear, KICK_DATA, cmd_kick, BAN_DATA, cmd_ban
@@ -91,7 +93,7 @@ ALL_COMMANDS = [
     
     # Games
     COINFLIP_DATA, SLOTS_DATA, ROULETTE_DATA, RPS_DATA, TRIVIA_DATA,
-    POKER_DATA, BLACKJACK_DATA, DUEL_DATA, LOTTERY_DATA,
+    POKER_DATA, BLACKJACK_DATA, DUEL_DATA, LOTTERY_DATA, TTT_DATA,
     
     # Economy & GTA
     BALANCE_DATA, DAILY_DATA, PAY_DATA, RICHLIST_DATA,
@@ -102,7 +104,7 @@ ALL_COMMANDS = [
     RANK_DATA, LEADERBOARD_XP_DATA,
     
     # System & Admin
-    SYNCTEST_DATA, SERVER_DATA, HELP_DATA,
+    SYNCTEST_DATA, SERVER_DATA, HELP_DATA, STATS_DATA,
     CLEAR_DATA, KICK_DATA, BAN_DATA
 ]
 
@@ -123,7 +125,7 @@ COMMAND_HANDLERS = {
     
     # Games
     "coinflip": cmd_coinflip, "slots": cmd_slots, "roulette": cmd_roulette, 
-    "rps": cmd_rps, "trivia": cmd_trivia,
+    "rps": cmd_rps, "trivia": cmd_trivia, "tictactoe": cmd_tictactoe,
     "poker": cmd_poker, "blackjack": cmd_blackjack, "duel": cmd_duel, "lottery": cmd_lottery,
     
     # Economy & GTA
@@ -136,7 +138,7 @@ COMMAND_HANDLERS = {
     
     # System & Admin
     "synctest": cmd_synctest, "serverinfo": cmd_server_info, "help": cmd_help,
-    "clear": cmd_clear, "kick": cmd_kick, "ban": cmd_ban
+    "clear": cmd_clear, "kick": cmd_kick, "ban": cmd_ban, "stats": cmd_stats
 }
 
 # ==========================================
@@ -212,7 +214,7 @@ def interactions():
         elif custom_id.startswith("marry_"): response = handle_marry_component(r)
         
         elif custom_id == "shop_buy_select": response = handle_shop_component(r)
-            
+        elif custom_id.startswith("ttt_"): response = handle_ttt_component(r)         
         if response:
             return jsonify(response)
 
